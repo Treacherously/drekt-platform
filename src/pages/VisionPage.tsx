@@ -9,8 +9,8 @@ import { analyzeSupplyRisk, generateRecommendations, SupplierRisk, Recommendatio
 const DisasterMap = dynamic(() => import('../components/DisasterMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full rounded-lg bg-gray-900 flex items-center justify-center">
-      <p className="text-gray-400">Loading map...</p>
+    <div className="w-full h-full rounded-xl border border-gray-300 bg-gray-50 dark:bg-slate-800 flex items-center justify-center shadow-md">
+      <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
     </div>
   ),
 });
@@ -68,6 +68,27 @@ export default function VisionPage() {
   const [activeDisasters, setActiveDisasters] = useState<Disaster[]>([]);
   const [supplierRisks, setSupplierRisks] = useState<SupplierRisk[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [visibleBusinesses, setVisibleBusinesses] = useState<Supplier[]>([]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([14.6091, 121.0223]); // Default: Metro Manila
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  // Get user location on initial load
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userCoords: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setMapCenter(userCoords);
+          console.log('User location obtained for map:', userCoords);
+        },
+        (error) => {
+          console.log('Using default Manila location:', error.message);
+          // Keep Manila as default
+        },
+        { timeout: 5000 }
+      );
+    }
+  }, []);
 
   // Auto-scan weather data on page load
   useEffect(() => {
@@ -158,24 +179,24 @@ export default function VisionPage() {
   }, [activeDisasters]);
 
   return (
-    <div className="h-screen bg-gray-950 text-gray-100 flex overflow-hidden">
+    <div className="h-screen bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 flex overflow-hidden">
       {/* Left Panel - Risk Feed */}
-      <div className="w-[30%] bg-gray-900 border-r border-red-900/30 flex flex-col">
+      <div className="w-[30%] bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-red-900/30">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <h2 className="text-xl font-bold text-red-500">RISK FEED</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">RISK FEED</h2>
           </div>
-          <p className="text-sm text-gray-400">Real-time supply chain alerts</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Real-time supply chain alerts</p>
         </div>
 
         {/* Weather Data List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-2"></div>
-              <p className="text-sm text-gray-400">Scanning regions...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Scanning regions...</p>
             </div>
           ) : (
             weatherData.map((region, index) => (
@@ -183,32 +204,32 @@ export default function VisionPage() {
                 key={index}
                 className={`p-4 rounded-lg border-l-4 ${
                   region.isHighRisk
-                    ? 'bg-red-950/50 border-red-500'
-                    : 'bg-green-950/50 border-green-500'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                    : 'bg-green-50 dark:bg-green-900/20 border-green-500'
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-sm text-white">{region.region}</h3>
+                  <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{region.region}</h3>
                   <span
-                    className={`text-xs px-2 py-1 rounded ${
+                    className={`text-xs px-2 py-1 rounded font-semibold ${
                       region.isHighRisk
-                        ? 'bg-red-500 text-white'
-                        : 'bg-green-500 text-white'
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
+                        : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
                     }`}
                   >
                     {region.isHighRisk ? 'HIGH RISK' : 'SAFE'}
                   </span>
                 </div>
                 <div className="space-y-1 mb-2">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     <span className="font-semibold">Wind:</span> {region.windSpeed.toFixed(1)} km/h
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     <span className="font-semibold">Rain:</span> {region.precipitation.toFixed(1)} mm
                   </p>
                 </div>
                 {region.isHighRisk && region.riskFactors.length > 0 && (
-                  <div className="text-xs text-red-400">
+                  <div className="text-xs text-red-600 dark:text-red-400">
                     {region.riskFactors.map((factor, i) => (
                       <p key={i}>⚠️ {factor}</p>
                     ))}
@@ -220,18 +241,18 @@ export default function VisionPage() {
         </div>
 
         {/* Active Threats Summary */}
-        <div className="p-4 border-t border-red-900/30 bg-gray-950">
-          <h3 className="text-sm font-semibold text-red-500 mb-2">ACTIVE THREATS</h3>
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">ACTIVE THREATS</h3>
           <div className="space-y-2">
             {activeDisasters.length > 0 ? (
               activeDisasters.map((disaster, index) => (
                 <div key={index} className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <div>
-                    <span className="text-sm font-medium text-white block">{disaster.name}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white block">{disaster.name}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
                       Wind: {disaster.windSpeed?.toFixed(1)} km/h | Rain: {disaster.precipitation?.toFixed(1)} mm
                     </span>
                   </div>
@@ -239,10 +260,10 @@ export default function VisionPage() {
               ))
             ) : (
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm font-medium text-green-500">All regions safe</span>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">All regions safe</span>
               </div>
             )}
           </div>
@@ -250,27 +271,27 @@ export default function VisionPage() {
       </div>
 
       {/* Right Panel - Map View */}
-      <div className="flex-1 flex flex-col bg-gray-950">
+      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-slate-900">
         {/* Header */}
-        <div className="p-6 border-b border-gray-800">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 DREKT VISION
               </h1>
-              <p className="text-sm text-gray-400 mt-1">Supply Chain Resilience Dashboard</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Supply Chain Resilience Dashboard</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-400">
-                  Safe: <span className="text-green-500 font-semibold">{safeSuppliers.length}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Safe: <span className="text-green-600 dark:text-green-400 font-semibold">{safeSuppliers.length}</span>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-400">
-                  At Risk: <span className="text-red-500 font-semibold">{affectedSuppliers.length}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  At Risk: <span className="text-red-600 dark:text-red-400 font-semibold">{affectedSuppliers.length}</span>
                 </span>
               </div>
             </div>
@@ -279,25 +300,29 @@ export default function VisionPage() {
 
         {/* Map Container */}
         <div className="flex-1 relative p-6">
-          <DisasterMap
-            businesses={suppliers}
-            disaster={primaryDisaster}
-            affectedSuppliers={affectedSuppliers}
-            allDisasters={activeDisasters}
-          />
+          <div className="h-full rounded-xl border border-gray-300 dark:border-slate-700 shadow-md overflow-hidden bg-white dark:bg-slate-800">
+            <DisasterMap
+              businesses={suppliers}
+              disaster={primaryDisaster}
+              affectedSuppliers={affectedSuppliers}
+              allDisasters={activeDisasters}
+              mapCenter={mapCenter}
+              onVisibleBusinessesChange={(visible) => setVisibleBusinesses(visible)}
+            />
+          </div>
 
           {/* Strategic Advice Section */}
           {recommendations.length > 0 && (
-            <div className="absolute top-10 right-10 bg-gray-900/95 backdrop-blur-md border border-orange-500/30 rounded-lg p-6 shadow-2xl w-96 z-[1000] max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="absolute top-10 right-10 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-xl w-96 z-[1000] max-h-[600px] overflow-y-auto custom-scrollbar">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">STRATEGIC ADVICE</h3>
-                  <p className="text-xs text-gray-400">AI-Powered Recommendations</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">STRATEGIC ADVICE</h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">AI-Powered Recommendations</p>
                 </div>
               </div>
 
@@ -305,38 +330,38 @@ export default function VisionPage() {
                 {recommendations.map((rec) => (
                   <div
                     key={rec.id}
-                    className="bg-gray-950/50 border border-orange-500/30 rounded-lg p-4"
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4"
                   >
                     <div className="flex items-start gap-2 mb-3">
                       <span className="text-2xl">⚠️</span>
                       <div className="flex-1">
-                        <h4 className="text-sm font-bold text-orange-500 mb-1">
+                        <h4 className="text-sm font-bold text-amber-600 dark:text-amber-500 mb-1">
                           {rec.title}
                         </h4>
-                        <p className="text-xs text-gray-400 mb-2">{rec.description}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{rec.description}</p>
                       </div>
                     </div>
 
-                    <div className="bg-gray-900/50 rounded p-3 mb-3">
-                      <p className="text-xs text-gray-400 mb-2">
-                        <span className="font-semibold text-green-400">Recommended Action:</span>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded p-3 mb-3">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">Recommended Action:</span>
                       </p>
-                      <p className="text-sm text-white font-medium mb-3">{rec.action}</p>
+                      <p className="text-sm text-gray-900 dark:text-white font-medium mb-3">{rec.action}</p>
 
                       {rec.alternativeSuppliers.length > 0 && (
                         <div className="space-y-2">
                           {rec.alternativeSuppliers.slice(0, 2).map((supplier) => (
                             <div
                               key={supplier.id}
-                              className="flex items-center justify-between bg-gray-800/50 rounded p-2"
+                              className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded p-2"
                             >
                               <div className="flex-1">
-                                <p className="text-xs font-semibold text-white">{supplier.name}</p>
-                                <p className="text-xs text-gray-400">{supplier.city}</p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-white">{supplier.name}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">{supplier.city}</p>
                               </div>
                               <a
                                 href={`/supplier/${supplier.id}`}
-                                className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded transition-colors"
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors"
                               >
                                 Connect Now →
                               </a>
@@ -347,10 +372,10 @@ export default function VisionPage() {
                     </div>
 
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500">
+                      <span className="text-gray-600 dark:text-gray-400">
                         {rec.affectedSuppliers.length} supplier{rec.affectedSuppliers.length > 1 ? 's' : ''} affected
                       </span>
-                      <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded">
+                      <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded font-semibold">
                         {rec.severity.toUpperCase()}
                       </span>
                     </div>
@@ -361,16 +386,16 @@ export default function VisionPage() {
           )}
 
           {/* Impact Summary Widget */}
-          <div className="absolute top-10 left-10 bg-gray-900/95 backdrop-blur-md border border-red-500/30 rounded-lg p-6 shadow-2xl w-80 z-[1000]">
+          <div className="absolute top-10 left-10 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-xl w-80 z-[1000]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">IMPACT SUMMARY</h3>
-                <p className="text-xs text-gray-400">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">IMPACT SUMMARY</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   {activeDisasters.length > 0 ? primaryDisaster.name : 'Real-time Weather Monitoring'}
                 </p>
               </div>
@@ -378,45 +403,47 @@ export default function VisionPage() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Affected Suppliers</span>
-                <span className="text-2xl font-bold text-red-500">{affectedSuppliers.length}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Affected Suppliers</span>
+                <span className="text-2xl font-bold text-red-600 dark:text-red-400">{affectedSuppliers.length}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Max Wind Speed</span>
-                <span className="text-2xl font-bold text-orange-500">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Max Wind Speed</span>
+                <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   {primaryDisaster.windSpeed?.toFixed(1) || 0} km/h
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Precipitation</span>
-                <span className="text-xl font-bold text-blue-400">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Precipitation</span>
+                <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                   {primaryDisaster.precipitation?.toFixed(1) || 0} mm
                 </span>
               </div>
 
-              <div className="pt-4 border-t border-gray-800">
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Risk Level</span>
-                  <span className={`px-3 py-1 text-white text-xs font-bold rounded-full ${
-                    activeDisasters.length > 0 ? 'bg-red-500 animate-pulse' : 'bg-green-500'
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Risk Level</span>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                    activeDisasters.length > 0 
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200' 
+                      : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
                   }`}>
                     {activeDisasters.length > 0 ? 'CRITICAL' : 'NORMAL'}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-800 space-y-2">
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-700 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Producers Affected</span>
-                  <span className="text-red-400 font-semibold">
+                  <span className="text-gray-600 dark:text-gray-400">Producers Affected</span>
+                  <span className="text-red-600 dark:text-red-400 font-semibold">
                     {affectedSuppliers.filter(s => s.role === 'Producer').length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Distributors Affected</span>
-                  <span className="text-red-400 font-semibold">
+                  <span className="text-gray-600 dark:text-gray-400">Distributors Affected</span>
+                  <span className="text-red-600 dark:text-red-400 font-semibold">
                     {affectedSuppliers.filter(s => s.role === 'Distributor').length}
                   </span>
                 </div>

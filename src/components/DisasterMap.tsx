@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Supplier } from '../data/mockData';
@@ -17,13 +17,42 @@ interface DisasterMapProps {
   disaster: Disaster;
   affectedSuppliers: Supplier[];
   allDisasters?: Disaster[];
+  mapCenter?: [number, number];
+  onVisibleBusinessesChange?: (businesses: Supplier[]) => void;
 }
 
-export default function DisasterMap({ businesses, disaster, affectedSuppliers, allDisasters = [] }: DisasterMapProps) {
+export default function DisasterMap({ businesses, disaster, affectedSuppliers, allDisasters = [], mapCenter = [14.6091, 121.0223], onVisibleBusinessesChange }: DisasterMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const circlesRef = useRef<L.Circle[]>([]);
+  const [visibleBusinesses, setVisibleBusinesses] = useState<Supplier[]>([]);
+  const [showSearchButton, setShowSearchButton] = useState(false);
+  const [initialFilterDone, setInitialFilterDone] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Filter businesses within map bounds
+  const filterBusinessesInBounds = (map: L.Map) => {
+    const bounds = map.getBounds();
+    const filtered = businesses.filter(b => {
+      if (!b.latitude || !b.longitude) return false;
+      return bounds.contains([b.latitude, b.longitude]);
+    });
+    setVisibleBusinesses(filtered);
+    if (onVisibleBusinessesChange) {
+      onVisibleBusinessesChange(filtered);
+    }
+    console.log('Visible businesses in viewport:', filtered.length, 'of', businesses.length);
+    return filtered;
+  };
+
+  // Handle manual search trigger
+  const handleSearchThisArea = () => {
+    if (mapRef.current) {
+      filterBusinessesInBounds(mapRef.current);
+      setShowSearchButton(false);
+    }
+  };
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -39,24 +68,48 @@ export default function DisasterMap({ businesses, disaster, affectedSuppliers, a
     if (!mapRef.current) {
       try {
         mapRef.current = L.map(container, {
-          center: [12.8797, 121.7740],
-          zoom: 6,
+          center: mapCenter,
+          zoom: 10,
           zoomControl: true,
           preferCanvas: true,
         });
 
         // Use dark mode tiles for command center aesthetic
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
           maxZoom: 19,
         }).addTo(mapRef.current);
 
-        // Force map to recalculate size
-        setTimeout(() => {
-          if (mapRef.current) {
-            mapRef.current.invalidateSize();
+        // Wait for map to be fully ready before operations
+        mapRef.current.whenReady(() => {
+          console.log('DisasterMap is fully initialized and ready');
+          setMapReady(true);
+        });
+
+        // Add map event listeners for viewport-based loading (with safety checks)
+        mapRef.current.on('moveend', () => {
+          if (mapRef.current && mapReady) {
+            try {
+              filterBusinessesInBounds(mapRef.current);
+            } catch (error) {
+              console.error('Error during moveend filter:', error);
+            }
           }
-        }, 100);
+        });
+
+        mapRef.current.on('movestart', () => {
+          setShowSearchButton(true);
+        });
+
+        mapRef.current.on('zoomend', () => {
+          if (mapRef.current && mapReady) {
+            try {
+              filterBusinessesInBounds(mapRef.current);
+            } catch (error) {
+              console.error('Error during zoomend filter:', error);
+            }
+          }
+        });
       } catch (error) {
         console.error('Error initializing map:', error);
         return;
@@ -64,7 +117,7 @@ export default function DisasterMap({ businesses, disaster, affectedSuppliers, a
     }
 
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
 
     // Ensure map size is correct
     try {
@@ -145,10 +198,11 @@ export default function DisasterMap({ businesses, disaster, affectedSuppliers, a
     // Create set of affected supplier IDs for quick lookup
     const affectedIds = new Set(affectedSuppliers.map(s => s.id));
 
-    // Add markers for each business
+    // Add markers for VISIBLE businesses only (viewport-based loading)
     const markers: L.Marker[] = [];
+    const businessesToRender = visibleBusinesses.length > 0 ? visibleBusinesses : businesses;
     
-    businesses.forEach((business) => {
+    businessesToRender.forEach((business) => {
       if (business.latitude && business.longitude) {
         const isAffected = affectedIds.has(business.id);
 
@@ -300,18 +354,51 @@ export default function DisasterMap({ businesses, disaster, affectedSuppliers, a
           }
         }
       });
-      markersRef.current = [];
-      circlesRef.current = [];
-      
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
     };
-  }, [businesses, disaster, affectedSuppliers, allDisasters]);
+  }, [businesses, disaster, affectedSuppliers, allDisasters, mapCenter, visibleBusinesses, mapReady]);
+
+  // Separate useEffect for initial filtering (only after map is ready)
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || initialFilterDone) return;
+
+    // Initial load: filter businesses immediately after map is ready
+    setTimeout(() => {
+      if (mapRef.current && mapReady) {
+        try {
+          mapRef.current.invalidateSize();
+          filterBusinessesInBounds(mapRef.current);
+          setInitialFilterDone(true);
+          console.log('Initial auto-filter triggered for Metro Manila bounds');
+        } catch (error) {
+          console.error('Error during initial filter:', error);
+        }
+      }
+    }, 200); // Slightly longer delay for safety
+  }, [mapReady, initialFilterDone]);
 
   return (
-    <div className="relative w-full h-full rounded-lg overflow-hidden shadow-2xl border-2 border-red-900/30">
+    <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
+      
+      {/* Search This Area Button (Google Maps style) */}
+      {showSearchButton && (
+        <button
+          onClick={handleSearchThisArea}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Search this area
+        </button>
+      )}
+      
+      {/* Visible businesses counter */}
+      {visibleBusinesses.length > 0 && (
+        <div className="absolute bottom-4 left-4 z-[1000] bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 text-xs font-medium">
+          Showing {visibleBusinesses.length} of {businesses.length} suppliers
+        </div>
+      )}
     </div>
   );
 }

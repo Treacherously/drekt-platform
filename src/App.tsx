@@ -21,8 +21,8 @@ const BusinessMap = dynamic(() => import('./components/BusinessMap'), {
 const NetworkPage = dynamic(() => import('./app/network/page'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <p className="text-gray-400">Loading DREKT CONNECTIONS...</p>
+    <div className="w-full h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <p className="text-gray-600 dark:text-gray-400">Loading DREKT CONNECTIONS...</p>
     </div>
   ),
 });
@@ -33,14 +33,18 @@ export default function App() {
   const [selectedProducer, setSelectedProducer] = useState<string>('');
   const [selectedDistributor, setSelectedDistributor] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredBusinesses, setFilteredBusinesses] = useState<Supplier[]>(suppliers);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [sortByNearest, setSortByNearest] = useState(false);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'inbox' | 'profile' | 'settings' | 'vision' | 'network'>('dashboard');
   const [darkMode, setDarkMode] = useState(() => {
-    // Initialize from localStorage or default to true (dark mode)
+    // Initialize from localStorage or default to false (light mode for enterprise)
     if (typeof window !== 'undefined') {
       const savedMode = localStorage.getItem('darkMode');
-      return savedMode !== null ? savedMode === 'true' : true;
+      return savedMode !== null ? savedMode === 'true' : false;
     }
-    return true;
+    return false;
   });
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const router = useRouter();
@@ -76,52 +80,169 @@ export default function App() {
     value: type,
   }));
 
-  const getFilteredSuppliers = (): Supplier[] => {
-    return suppliers.filter((supplier: Supplier) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesName = supplier.name.toLowerCase().includes(query);
-        const matchesCity = supplier.city.toLowerCase().includes(query);
-        const matchesProduct = supplier.productCategory.toLowerCase().includes(query);
-        const matchesProducts = supplier.products.some(p => p.name.toLowerCase().includes(query));
-        
-        if (!matchesName && !matchesCity && !matchesProduct && !matchesProducts) {
-          return false;
-        }
-      }
-      
-      if (selectedCity && supplier.city !== selectedCity) {
-        return false;
-      }
-      
-      if (selectedProducer) {
-        if (supplier.role !== 'Producer' || supplier.productCategory !== selectedProducer) {
-          return false;
-        }
-      }
-      
-      if (selectedDistributor) {
-        if (supplier.role !== 'Distributor' || supplier.businessType !== selectedDistributor) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
+  // SAFE HAVERSINE DISTANCE FUNCTION - Crash-proof with guardrails
+  const getDistance = (lat1: number | undefined, lon1: number | undefined, lat2: number | undefined, lon2: number | undefined): number => {
+    // CRITICAL GUARDRAIL: Check all inputs immediately
+    if (!lat1 || !lon1 || !lat2 || !lon2 || isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+      return Infinity; // Bad data gets sorted to bottom
+    }
+
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    
+    return distance;
   };
 
-  const filteredSuppliers = useMemo(() => getFilteredSuppliers(), [searchQuery, selectedCity, selectedProducer, selectedDistributor]);
+  // GET USER LOCATION HANDLER - Crash-proof with error handling
+  const handleGetLocation = () => {
+    // Strict geolocation check
+    if (!('geolocation' in navigator)) {
+      alert('GPS not supported by your browser');
+      return;
+    }
+
+    setIsLocating(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      // Success callback
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setSortByNearest(true);
+        setIsLocating(false);
+        console.log('User location obtained:', position.coords.latitude, position.coords.longitude);
+      },
+      // Error callback
+      (error) => {
+        setIsLocating(false);
+        let errorMessage = 'Location access denied';
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied. Please enable location permissions.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        
+        alert(errorMessage);
+        console.error('Geolocation error:', error);
+      },
+      // Options
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  // TOGGLE SORT BY NEAREST - Professional toggle logic
+  const handleToggleSortByNearest = () => {
+    if (!sortByNearest && !userLocation) {
+      // First time: get location
+      handleGetLocation();
+    } else {
+      // Toggle on/off
+      setSortByNearest(prev => !prev);
+    }
+  };
+
+  // STRICT AND PIPELINE - Sequential filtering with exact matches
+  useEffect(() => {
+    console.log('=== FILTER PIPELINE START ===');
+    console.log('Initial businesses:', suppliers.length);
+    
+    // Start with ALL businesses
+    let result = [...suppliers];
+
+    // Step 1: Strict Location Filter (City)
+    if (selectedCity && selectedCity !== '' && selectedCity !== 'All') {
+      result = result.filter(b => b.city === selectedCity);
+      console.log('After Location Filter (', selectedCity, '):', result.length);
+    }
+
+    // Step 2: Strict Producer Category Filter
+    if (selectedProducer && selectedProducer !== '' && selectedProducer !== 'All') {
+      result = result.filter(b => b.role === 'Producer' && b.productCategory === selectedProducer);
+      console.log('After Producer Filter (', selectedProducer, '):', result.length);
+    }
+
+    // Step 3: Strict Distributor Type Filter
+    if (selectedDistributor && selectedDistributor !== '' && selectedDistributor !== 'All') {
+      result = result.filter(b => b.role === 'Distributor' && b.businessType === selectedDistributor);
+      console.log('After Distributor Filter (', selectedDistributor, '):', result.length);
+    }
+
+    // Step 4: Search Text (Name or Product) - Simple .includes()
+    if (searchQuery && searchQuery.trim() !== '') {
+      const lowerQuery = searchQuery.toLowerCase();
+      result = result.filter(b => 
+        b.name.toLowerCase().includes(lowerQuery) ||
+        b.products.some(p => p.name.toLowerCase().includes(lowerQuery))
+      );
+      console.log('After Search Filter ("', searchQuery, '"):', result.length);
+    }
+
+    console.log('Before deduplication:', result.length, 'businesses');
+    
+    // DEDUPLICATION: Remove duplicates based on ID
+    const uniqueResults = Array.from(
+      new Map(result.map(item => [item.id, item])).values()
+    );
+    
+    console.log('After deduplication:', uniqueResults.length, 'businesses');
+    console.log('=== FINAL RESULT:', uniqueResults.length, 'unique businesses ===');
+    
+    // IMMUTABLE SORTING: Sort by distance if 'Sort by Nearest' is active
+    let finalResults = uniqueResults;
+    
+    if (sortByNearest && userLocation) {
+      console.log('Sorting by distance from user location...');
+      // Create a COPY first - never mutate state directly
+      const sorted = [...uniqueResults];
+      
+      sorted.sort((a, b) => {
+        const distanceA = getDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+        const distanceB = getDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+        return distanceA - distanceB;
+      });
+      
+      finalResults = sorted;
+      console.log('Sorted by distance. Nearest:', sorted[0]?.name, 'at', getDistance(userLocation.lat, userLocation.lng, sorted[0]?.latitude, sorted[0]?.longitude).toFixed(1), 'km');
+    }
+    
+    // Update filtered state with deduplicated and optionally sorted results
+    setFilteredBusinesses(finalResults);
+  }, [searchQuery, selectedCity, selectedProducer, selectedDistributor, sortByNearest, userLocation]);
+
+  const filteredSuppliers = filteredBusinesses;
 
   const handleCitySelect = (item: DropdownItem) => {
+    console.log('City selected:', item.value);
     setSelectedCity(item.value);
   };
 
   const handleProducerSelect = (item: DropdownItem) => {
+    console.log('Producer category selected:', item.value);
     setSelectedProducer(item.value);
   };
 
   const handleDistributorSelect = (item: DropdownItem) => {
+    console.log('Distributor type selected:', item.value);
     setSelectedDistributor(item.value);
   };
 
@@ -135,27 +256,30 @@ export default function App() {
     setSelectedCity('');
     setSelectedProducer('');
     setSelectedDistributor('');
+    setSearchQuery('');
+    setSortByNearest(false);
+    setUserLocation(null);
   };
 
   const hasActiveFilters = selectedCity || selectedProducer || selectedDistributor;
 
   return (
-    <div className="dashboard-container flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-900">
       <aside
-        className={`dashboard-sidebar flex-shrink-0 transition-all duration-300 ${
+        className={`bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex-shrink-0 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-slate-700">
             {sidebarOpen && (
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                 DREKT
               </h1>
             )}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
               aria-label="Toggle sidebar"
             >
               <svg
@@ -179,10 +303,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => setCurrentPage('dashboard')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     currentPage === 'dashboard'
-                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,10 +318,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => setCurrentPage('vision')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     currentPage === 'vision'
-                      ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,10 +333,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => setCurrentPage('network')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     currentPage === 'network'
-                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,10 +348,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => setCurrentPage('inbox')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     currentPage === 'inbox'
-                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,10 +363,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => setCurrentPage('profile')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     currentPage === 'profile'
-                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,10 +378,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => setCurrentPage('settings')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     currentPage === 'settings'
-                      ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,10 +394,10 @@ export default function App() {
             </ul>
           </nav>
 
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-t border-gray-200 dark:border-slate-700">
             <button
               onClick={() => alert('Logged out')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -282,7 +406,7 @@ export default function App() {
             </button>
           </div>
 
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-t border-gray-200 dark:border-slate-700">
             {sidebarOpen && (
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 <p className="font-semibold mb-1">DREKT Hub</p>
@@ -294,7 +418,7 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="dashboard-header flex-shrink-0">
+        <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
           <div className="flex h-16 items-center justify-between px-6">
             <div className="flex items-center gap-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -322,6 +446,33 @@ export default function App() {
                     className="w-96 px-4 py-2 pl-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
                 </div>
+                <button
+                  onClick={handleToggleSortByNearest}
+                  disabled={isLocating}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border ${
+                    sortByNearest
+                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                      : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isLocating ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-sm">Locating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm">{sortByNearest ? 'Sorted by Distance' : 'Sort by Nearest'}</span>
+                    </>
+                  )}
+                </button>
                 <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('list')}
@@ -389,7 +540,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-gray-900 p-6">
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-slate-900 p-6">
           {currentPage === 'vision' && <VisionPage />}
           {currentPage === 'network' && <NetworkPage />}
           {currentPage === 'inbox' && <InboxPage />}
@@ -450,22 +601,30 @@ export default function App() {
 
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Suppliers {hasActiveFilters && `(${filteredSuppliers.length} results)`}
+                Suppliers ({filteredBusinesses.length} results)
               </h2>
-              {!hasActiveFilters && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing all {suppliers.length} suppliers
-                </p>
-              )}
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {filteredBusinesses.length === suppliers.length 
+                  ? `Showing all ${suppliers.length} suppliers`
+                  : `Filtered from ${suppliers.length} total suppliers`
+                }
+              </p>
             </div>
 
             {viewMode === 'map' ? (
-              <BusinessMap businesses={filteredSuppliers} />
-            ) : filteredSuppliers.length > 0 ? (
+              <BusinessMap 
+                businesses={filteredBusinesses}
+                onLocationChange={(location) => {
+                  setUserLocation(location);
+                  setSortByNearest(true); // Auto-enable sorting when location is set
+                  console.log('📍 Map location synced to dashboard:', location);
+                }}
+              />
+            ) : filteredBusinesses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSuppliers.map((supplier) => (
+                {filteredBusinesses.map((supplier, index) => (
                   <div
-                    key={supplier.id}
+                    key={`${supplier.id}-${index}`}
                     className="dashboard-card p-6 hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => router.push(`/supplier/${supplier.id}`)}
                   >
@@ -474,9 +633,20 @@ export default function App() {
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {supplier.name}
                         </h3>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Active
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            Active
+                          </span>
+                          {sortByNearest && userLocation && (
+                            <span className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded-full">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {getDistance(userLocation.lat, userLocation.lng, supplier.latitude, supplier.longitude).toFixed(1)} km
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {supplier.description}
