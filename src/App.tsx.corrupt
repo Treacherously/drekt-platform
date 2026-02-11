@@ -1,0 +1,493 @@
+import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import './styles/globals.css';
+import Dropdown, { DropdownItem } from './components/Dropdown';
+import { cities, producerCategories, distributorTypes, suppliers, Supplier, getProducers, getDistributors } from './data/mockData';
+import { getCurrentPosition, calculateDistance, formatDistance } from './utils/geolocation';
+
+export default function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedProducer, setSelectedProducer] = useState<string>('');
+  const [selectedDistributor, setSelectedDistributor] = useState<string>('');
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string>('');
+  const router = useRouter();
+
+  // Add 'Near Me' option as first item in Cities dropdown
+  const cityItems: DropdownItem[] = [
+    {
+      id: 'near-me',
+      label: '📍 Suppliers/Distributors Near Me',
+      value: 'NEAR_ME',
+    },
+    ...cities.map((city) => ({
+      id: city.toLowerCase().replace(/\s+/g, '-'),
+      label: city,
+      value: city,
+    })),
+  ];
+
+  // Producer dropdown items (by crop/product)
+  const producerItems: DropdownItem[] = producerCategories.map((category) => ({
+    id: category.toLowerCase().replace(/\s+/g, '-'),
+    label: category,
+    value: category,
+  }));
+
+  // Distributor dropdown items (by type)
+  const distributorItems: DropdownItem[] = distributorTypes.map((type) => ({
+    id: type.toLowerCase().replace(/\s+/g, '-'),
+    label: type,
+    value: type,
+  }));
+
+  // Cumulative AND logic filtering function for Philippine supply chain
+  const getFilteredSuppliers = (): Supplier[] => {
+    let filtered = suppliers.filter((supplier) => {
+      // Near Me filter - filter by distance (20km radius)
+      if (selectedCity === 'NEAR_ME' && userLocation) {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          supplier.latitude,
+          supplier.longitude
+        );
+        if (distance > 20) {
+          return false;
+        }
+      }
+      
+      // City filter (AND logic)
+      if (selectedCity && selectedCity !== 'NEAR_ME' && supplier.city !== selectedCity) {
+        return false;
+      }
+      
+      // Producer filter (AND logic) - filter by crop/product category
+      if (selectedProducer) {
+        if (supplier.role !== 'Producer' || supplier.productCategory !== selectedProducer) {
+          return false;
+        }
+      }
+      
+      // Distributor filter (AND logic) - filter by distributor type (Wet Market, Supermarket, etc.)
+      if (selectedDistributor) {
+        if (supplier.role !== 'Distributor' || supplier.businessType !== selectedDistributor) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+
+    // Sort by distance if Near Me is selected
+    if (selectedCity === 'NEAR_ME' && userLocation) {
+      filtered = filtered.sort((a, b) => {
+        const distanceA = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          a.latitude,
+          a.longitude
+        );
+        const distanceB = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          b.latitude,
+          b.longitude
+        );
+        return distanceA - distanceB;
+      });
+    }
+
+    return filtered;
+  };
+
+  // Memoize filtered results for performance
+  const filteredSuppliers = useMemo(() => getFilteredSuppliers(), [selectedCity, selectedProducer, selectedDistributor, userLocation]);
+
+  // Calculate distance for each supplier if user location is available
+  const suppliersWithDistance = useMemo(() => {
+    if (!userLocation) return filteredSuppliers.map(s => ({ supplier: s, distance: null }));
+    
+    return filteredSuppliers.map(supplier => ({
+      supplier,
+      distance: calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        supplier.latitude,
+        supplier.longitude
+      ),
+    }));
+  }, [filteredSuppliers, userLocation]);
+
+  const handleCitySelect = async (item: DropdownItem) => {
+    console.log('Selected City:', item);
+    
+    // Handle 'Near Me' selection
+    if (item.value === 'NEAR_ME') {
+      setIsLocating(true);
+      setLocationError('');
+      
+      try {
+        const position = await getCurrentPosition();
+        setUserLocation(position);
+        setSelectedCity('NEAR_ME');
+        setIsLocating(false);
+      } catch (error) {
+        console.error('Geolocation error:', error);
+        setLocationError(error instanceof Error ? error.message : 'Failed to get location');
+        setIsLocating(false);
+        setSelectedCity(''); // Reset selection on error
+      }
+    } else {
+      setSelectedCity(item.value);
+      setUserLocation(null); // Clear user location when selecting a specific city
+    }
+  };
+
+  const handleProducerSelect = (item: DropdownItem) => {
+    console.log('Selected Producer Category:', item);
+    setSelectedProducer(item.value);
+  };
+
+  const handleDistributorSelect = (item: DropdownItem) => {
+    console.log('Selected Distributor Type:', item);
+    setSelectedDistributor(item.value);
+  };
+
+  const clearFilter = (filterType: 'city' | 'producer' | 'distributor') => {
+    if (filterType === 'city') {
+      setSelectedCity('');
+      setUserLocation(null);
+    }
+    if (filterType === 'producer') setSelectedProducer('');
+    if (filterType === 'distributor') setSelectedDistributor('');
+  };
+
+  const clearAllFilters = () => {
+    setSelectedCity('');
+    setSelectedProducer('');
+    setSelectedDistributor('');
+    setUserLocation(null);
+  };
+
+  const hasActiveFilters = selectedCity || selectedProducer || selectedDistributor;
+
+  return (
+    <div className="dashboard-container flex h-screen overflow-hidden">
+      {/* Sidebar */}
+      <aside
+        className={`dashboard-sidebar flex-shrink-0 transition-all duration-300 ${
+          sidebarOpen ? 'w-64' : 'w-20'
+        }`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Sidebar Header */}
+          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+            {sidebarOpen && (
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Supply Chain
+              </h1>
+            )}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <svg
+                className="w-5 h-5 text-gray-600 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={sidebarOpen ? 'M11 19l-7-7 7-7m8 14l-7-7 7-7' : 'M13 5l7 7-7 7M5 5l7 7-7 7'}
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Sidebar Navigation */}
+          <nav className="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <ul className="space-y-2">
+              {/* Navigation items will be populated here */}
+            </ul>
+          </nav>
+
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            {/* User profile or settings will go here */}
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="dashboard-header flex-shrink-0">
+          <div className="flex h-16 items-center justify-between px-6">
+            {/* Header Left */}
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Dashboard
+              </h2>
+            </div>
+
+            {/* Header Right */}
+            <div className="flex items-center gap-3">
+              <Dropdown
+                label="Cities"
+                items={cityItems}
+                onSelect={handleCitySelect}
+                placeholder="All Cities"
+              />
+              <Dropdown
+                label="Producers"
+                items={producerItems}
+                onSelect={handleProducerSelect}
+                placeholder="Filter by Crop"
+              />
+              <Dropdown
+                label="Distributors"
+                items={distributorItems}
+                onSelect={handleDistributorSelect}
+                placeholder="Filter by Type"
+              />
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-gray-900 p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="mb-6 dashboard-card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Active Filters:
+                  </h3>
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCity && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {selectedCity === 'NEAR_ME' ? '📍 Near Me (20km)' : `City: ${selectedCity}`}
+                      <button
+                        onClick={() => clearFilter('city')}
+                        className="ml-2 hover:text-blue-900 dark:hover:text-blue-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {selectedProducer && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      Producer: {selectedProducer}
+                      <button
+                        onClick={() => clearFilter('producer')}
+                        className="ml-2 hover:text-green-900 dark:hover:text-green-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {selectedDistributor && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                      Distributor: {selectedDistributor}
+                      <button
+                        onClick={() => clearFilter('distributor')}
+                        className="ml-2 hover:text-purple-900 dark:hover:text-purple-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Results Header */}
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Suppliers {hasActiveFilters && `(${filteredSuppliers.length} results)`}
+              </h2>
+              {!hasActiveFilters && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing all {suppliers.length} suppliers
+                </p>
+              )}
+            </div>
+
+            {/* Loading State */}
+            {isLocating && (
+              <div className="dashboard-card p-12 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900 mb-4 animate-pulse">
+                  <svg className="w-8 h-8 text-primary-600 dark:text-primary-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Locating you...
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Please allow location access to find nearby suppliers
+                </p>
+              </div>
+            )}
+
+            {/* Location Error */}
+            {locationError && (
+              <div className="dashboard-card p-6 mb-6 border-l-4 border-red-500">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-red-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                      Location Error
+                    </h3>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      {locationError}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setLocationError('')}
+                    className="ml-auto text-red-500 hover:text-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Supplier Cards Grid */}
+            {!isLocating && suppliersWithDistance.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {suppliersWithDistance.map(({ supplier, distance }) => (
+                  <div
+                    key={supplier.id}
+                    className="dashboard-card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => router.push(`/supplier/${supplier.id}`)}
+                  >
+                    {/* Supplier Header */}
+                    <div className="mb-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {supplier.name}
+                        </h3>
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Active
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {supplier.description}
+                      </p>
+                    </div>
+
+                    {/* Supplier Details */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        <span className="text-gray-700 dark:text-gray-300">{supplier.city}</span>
+                        {distance !== null && (
+                          <span className="ml-auto text-xs font-medium text-primary-600 dark:text-primary-400">
+                            📍 {formatDistance(distance)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <span className="text-gray-700 dark:text-gray-300">{supplier.productCategory}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <span className="text-gray-700 dark:text-gray-300">{supplier.products.length} Products</span>
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>{supplier.contactEmail}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <span>{supplier.contactPhone}</span>
+                      </div>
+                    </div>
+
+                    {/* View Details Button */}
+                    <button className="mt-4 w-full btn-primary text-sm py-2">
+                      View Details →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : !isLocating ? (
+              <div className="dashboard-card p-12 text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No suppliers found
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  No suppliers match your current filter criteria.
+                </p>
+                <button
+                  onClick={clearAllFilters}
+                  className="btn-primary"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}

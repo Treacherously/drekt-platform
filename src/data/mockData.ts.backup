@@ -1,0 +1,408 @@
+export type StockLevel = 'high' | 'medium' | 'low';
+
+// Philippine Supply Chain Roles
+export type BusinessRole = 'Producer' | 'Distributor' | 'Supplier';
+
+// Producer Types (Farms, Manufacturers)
+export type ProducerType = 'Rice Farm' | 'Corn Farm' | 'Coconut Farm' | 'Mango Farm' | 'Abaca Farm' | 'Vegetable Farm' | 'Fishery' | 'Livestock Farm' | 'Food Manufacturer' | 'Textile Manufacturer';
+
+// Distributor Types
+export type DistributorType = 'Supermarket' | 'Wet Market' | 'Drugstore' | 'Department Store' | 'Electronics Store' | 'Textile Market' | 'Hardware Store';
+
+// Supplier Types (Raw materials, Logistics)
+export type SupplierType = 'Raw Materials' | 'Logistics' | 'Packaging' | 'Equipment';
+
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  stockLevel: StockLevel;
+  quantity: number;
+  pricePerUnit: number;
+  unit: string;
+  lastUpdated: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  city: string;
+  role: BusinessRole;
+  businessType: ProducerType | DistributorType | SupplierType;
+  productCategory: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  products: Product[];
+  contactEmail: string;
+  contactPhone: string;
+}
+
+export const suppliers: Supplier[] = [
+  // ========== PRODUCERS ==========
+  {
+    id: 'PROD-001',
+    name: 'Nueva Ecija Rice Cooperative',
+    city: 'Cabanatuan',
+    role: 'Producer',
+    businessType: 'Rice Farm',
+    productCategory: 'Rice',
+    description: 'Premier rice producer in the Rice Granary of the Philippines',
+    latitude: 15.4860,
+    longitude: 120.9670,
+    contactEmail: 'sales@nuevaecijarice.ph',
+    contactPhone: '+63 44 463 2891',
+    products: [
+      { id: 'PROD-001-A', name: 'Premium Jasmine Rice', sku: 'RICE-JASMINE-25KG', stockLevel: 'high', quantity: 5000, pricePerUnit: 1850.00, unit: 'sack (25kg)', lastUpdated: '2026-02-09' },
+      { id: 'PROD-001-B', name: 'Dinorado Rice', sku: 'RICE-DINORADO-25KG', stockLevel: 'medium', quantity: 2500, pricePerUnit: 2200.00, unit: 'sack (25kg)', lastUpdated: '2026-02-08' },
+      { id: 'PROD-001-C', name: 'Sinandomeng Rice', sku: 'RICE-SINANDOMENG-25KG', stockLevel: 'high', quantity: 4200, pricePerUnit: 1650.00, unit: 'sack (25kg)', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'PROD-002',
+    name: 'Isabela Corn Growers Association',
+    city: 'Ilagan',
+    role: 'Producer',
+    businessType: 'Corn Farm',
+    productCategory: 'Corn',
+    description: 'Leading corn producer in Northern Luzon',
+    latitude: 17.1453,
+    longitude: 121.8845,
+    contactEmail: 'sales@isabelacorn.ph',
+    contactPhone: '+63 78 622 3456',
+    products: [
+      { id: 'PROD-002-A', name: 'Yellow Corn Kernels', sku: 'CORN-YELLOW-50KG', stockLevel: 'high', quantity: 3500, pricePerUnit: 1200.00, unit: 'sack (50kg)', lastUpdated: '2026-02-08' },
+      { id: 'PROD-002-B', name: 'White Corn Kernels', sku: 'CORN-WHITE-50KG', stockLevel: 'medium', quantity: 2000, pricePerUnit: 1350.00, unit: 'sack (50kg)', lastUpdated: '2026-02-09' },
+      { id: 'PROD-002-C', name: 'Sweet Corn', sku: 'CORN-SWEET-CRATE', stockLevel: 'medium', quantity: 800, pricePerUnit: 450.00, unit: 'crate', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'PROD-003',
+    name: 'Quezon Province Coconut Farmers Cooperative',
+    city: 'Lucena',
+    role: 'Producer',
+    businessType: 'Coconut Farm',
+    productCategory: 'Coconut',
+    description: 'Premium coconut products from Quezon Province',
+    latitude: 13.9414,
+    longitude: 121.6234,
+    contactEmail: 'sales@quezoncoconut.ph',
+    contactPhone: '+63 42 373 4567',
+    products: [
+      { id: 'PROD-003-A', name: 'Fresh Coconuts', sku: 'COCO-FRESH-100PCS', stockLevel: 'high', quantity: 5000, pricePerUnit: 3500.00, unit: 'per 100pcs', lastUpdated: '2026-02-09' },
+      { id: 'PROD-003-B', name: 'Copra (Dried Coconut)', sku: 'COPRA-50KG', stockLevel: 'high', quantity: 2500, pricePerUnit: 2800.00, unit: 'sack (50kg)', lastUpdated: '2026-02-08' },
+      { id: 'PROD-003-C', name: 'Virgin Coconut Oil', sku: 'VCO-1L', stockLevel: 'medium', quantity: 1200, pricePerUnit: 350.00, unit: 'liter', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'PROD-004',
+    name: 'Guimaras Mango Plantation',
+    city: 'Jordan',
+    role: 'Producer',
+    businessType: 'Mango Farm',
+    productCategory: 'Mango',
+    description: 'World-famous sweet mangoes from Guimaras',
+    latitude: 10.5929,
+    longitude: 122.6411,
+    contactEmail: 'export@guimarasmango.ph',
+    contactPhone: '+63 33 580 1234',
+    products: [
+      { id: 'PROD-004-A', name: 'Premium Carabao Mango', sku: 'MANGO-CARABAO-10KG', stockLevel: 'high', quantity: 3000, pricePerUnit: 850.00, unit: 'box (10kg)', lastUpdated: '2026-02-09' },
+      { id: 'PROD-004-B', name: 'Export Grade Mango', sku: 'MANGO-EXPORT-5KG', stockLevel: 'medium', quantity: 1500, pricePerUnit: 550.00, unit: 'box (5kg)', lastUpdated: '2026-02-08' },
+      { id: 'PROD-004-C', name: 'Dried Mango Slices', sku: 'MANGO-DRIED-1KG', stockLevel: 'high', quantity: 800, pricePerUnit: 450.00, unit: 'kg', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'PROD-005',
+    name: 'Bicol Abaca Weavers Cooperative',
+    city: 'Legazpi',
+    role: 'Producer',
+    businessType: 'Abaca Farm',
+    productCategory: 'Abaca',
+    description: 'Premium abaca fiber for textile and rope production',
+    latitude: 13.1391,
+    longitude: 123.7437,
+    contactEmail: 'sales@bicolabaca.ph',
+    contactPhone: '+63 52 480 5678',
+    products: [
+      { id: 'PROD-005-A', name: 'Grade A Abaca Fiber', sku: 'ABACA-GRADE-A-50KG', stockLevel: 'medium', quantity: 1200, pricePerUnit: 4500.00, unit: 'bale (50kg)', lastUpdated: '2026-02-09' },
+      { id: 'PROD-005-B', name: 'Grade B Abaca Fiber', sku: 'ABACA-GRADE-B-50KG', stockLevel: 'high', quantity: 2000, pricePerUnit: 3200.00, unit: 'bale (50kg)', lastUpdated: '2026-02-08' },
+      { id: 'PROD-005-C', name: 'Abaca Rope', sku: 'ABACA-ROPE-100M', stockLevel: 'medium', quantity: 500, pricePerUnit: 850.00, unit: 'coil (100m)', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'PROD-006',
+    name: 'Benguet Highland Vegetables',
+    city: 'La Trinidad',
+    role: 'Producer',
+    businessType: 'Vegetable Farm',
+    productCategory: 'Vegetables',
+    description: 'Fresh highland vegetables from the Salad Bowl of the Philippines',
+    latitude: 16.4565,
+    longitude: 120.5963,
+    contactEmail: 'orders@benguetveggies.ph',
+    contactPhone: '+63 74 422 3456',
+    products: [
+      { id: 'PROD-006-A', name: 'Lettuce', sku: 'VEG-LETTUCE-CRATE', stockLevel: 'high', quantity: 800, pricePerUnit: 650.00, unit: 'crate', lastUpdated: '2026-02-09' },
+      { id: 'PROD-006-B', name: 'Cabbage', sku: 'VEG-CABBAGE-50KG', stockLevel: 'high', quantity: 1500, pricePerUnit: 1200.00, unit: 'sack (50kg)', lastUpdated: '2026-02-08' },
+      { id: 'PROD-006-C', name: 'Carrots', sku: 'VEG-CARROT-25KG', stockLevel: 'medium', quantity: 900, pricePerUnit: 850.00, unit: 'sack (25kg)', lastUpdated: '2026-02-10' },
+      { id: 'PROD-006-D', name: 'Strawberries', sku: 'VEG-STRAWBERRY-KG', stockLevel: 'low', quantity: 200, pricePerUnit: 350.00, unit: 'kg', lastUpdated: '2026-02-09' },
+    ],
+  },
+  // ========== DISTRIBUTORS ==========
+  {
+    id: 'DIST-001',
+    name: 'SM Supermarket - Mall of Asia',
+    city: 'Pasay',
+    role: 'Distributor',
+    businessType: 'Supermarket',
+    productCategory: 'Retail',
+    description: 'Major supermarket chain serving Metro Manila',
+    latitude: 14.5352,
+    longitude: 120.9818,
+    contactEmail: 'procurement@smsupermarket.ph',
+    contactPhone: '+63 2 8556 0680',
+    products: [
+      { id: 'DIST-001-A', name: 'Rice Retail (Various Brands)', sku: 'RETAIL-RICE-MIX', stockLevel: 'high', quantity: 10000, pricePerUnit: 55.00, unit: 'kg', lastUpdated: '2026-02-09' },
+      { id: 'DIST-001-B', name: 'Fresh Vegetables', sku: 'RETAIL-VEG-MIX', stockLevel: 'high', quantity: 5000, pricePerUnit: 80.00, unit: 'kg', lastUpdated: '2026-02-08' },
+      { id: 'DIST-001-C', name: 'Canned Goods Assorted', sku: 'RETAIL-CAN-MIX', stockLevel: 'medium', quantity: 8000, pricePerUnit: 45.00, unit: 'piece', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'DIST-002',
+    name: 'Quinta Market (Wet Market)',
+    city: 'Quiapo',
+    role: 'Distributor',
+    businessType: 'Wet Market',
+    productCategory: 'Fresh Produce',
+    description: 'Traditional palengke serving fresh produce and meats',
+    latitude: 14.5995,
+    longitude: 120.9842,
+    contactEmail: 'admin@quintamarket.ph',
+    contactPhone: '+63 2 8734 5612',
+    products: [
+      { id: 'DIST-002-A', name: 'Fresh Fish (Bangus)', sku: 'WET-FISH-BANGUS', stockLevel: 'high', quantity: 500, pricePerUnit: 180.00, unit: 'kg', lastUpdated: '2026-02-09' },
+      { id: 'DIST-002-B', name: 'Pork (Various Cuts)', sku: 'WET-PORK-MIX', stockLevel: 'medium', quantity: 800, pricePerUnit: 280.00, unit: 'kg', lastUpdated: '2026-02-08' },
+      { id: 'DIST-002-C', name: 'Fresh Vegetables Daily', sku: 'WET-VEG-DAILY', stockLevel: 'high', quantity: 1200, pricePerUnit: 60.00, unit: 'kg', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'DIST-003',
+    name: 'Mercury Drug - Ermita Branch',
+    city: 'Manila',
+    role: 'Distributor',
+    businessType: 'Drugstore',
+    productCategory: 'Pharmaceuticals',
+    description: 'Leading pharmacy chain in the Philippines',
+    latitude: 14.5833,
+    longitude: 120.9833,
+    contactEmail: 'supply@mercurydrug.ph',
+    contactPhone: '+63 2 8911 5071',
+    products: [
+      { id: 'DIST-003-A', name: 'Paracetamol 500mg', sku: 'PHARMA-PCM-500', stockLevel: 'high', quantity: 50000, pricePerUnit: 5.50, unit: 'tablet', lastUpdated: '2026-02-09' },
+      { id: 'DIST-003-B', name: 'Vitamin C 500mg', sku: 'PHARMA-VITC-500', stockLevel: 'high', quantity: 30000, pricePerUnit: 8.00, unit: 'tablet', lastUpdated: '2026-02-08' },
+      { id: 'DIST-003-C', name: 'Antibiotic Amoxicillin', sku: 'PHARMA-AMOX-500', stockLevel: 'medium', quantity: 20000, pricePerUnit: 12.00, unit: 'capsule', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'DIST-004',
+    name: 'Divisoria Textile Market',
+    city: 'Manila',
+    role: 'Distributor',
+    businessType: 'Textile Market',
+    productCategory: 'Apparel',
+    description: 'Wholesale textile and fabric market hub',
+    latitude: 14.6042,
+    longitude: 120.9822,
+    contactEmail: 'wholesale@divisoriatextile.ph',
+    contactPhone: '+63 2 8242 8765',
+    products: [
+      { id: 'DIST-004-A', name: 'Cotton T-Shirts Wholesale', sku: 'APPAREL-TSHIRT-CTN', stockLevel: 'high', quantity: 15000, pricePerUnit: 85.00, unit: 'piece', lastUpdated: '2026-02-09' },
+      { id: 'DIST-004-B', name: 'Denim Jeans Assorted', sku: 'APPAREL-JEANS-DNM', stockLevel: 'medium', quantity: 8000, pricePerUnit: 350.00, unit: 'piece', lastUpdated: '2026-02-08' },
+      { id: 'DIST-004-C', name: 'Fabric Rolls (Per Meter)', sku: 'FABRIC-ROLL-MTR', stockLevel: 'high', quantity: 25000, pricePerUnit: 120.00, unit: 'meter', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'DIST-005',
+    name: 'Raon Electronics Center',
+    city: 'Manila',
+    role: 'Distributor',
+    businessType: 'Electronics Store',
+    productCategory: 'Electronics',
+    description: 'Electronics components and gadgets wholesale hub',
+    latitude: 14.6031,
+    longitude: 120.9874,
+    contactEmail: 'sales@raonelectronics.ph',
+    contactPhone: '+63 2 8733 4521',
+    products: [
+      { id: 'DIST-005-A', name: 'LED Bulbs Assorted', sku: 'ELEC-LED-BULB', stockLevel: 'high', quantity: 20000, pricePerUnit: 45.00, unit: 'piece', lastUpdated: '2026-02-09' },
+      { id: 'DIST-005-B', name: 'USB Cables Type-C', sku: 'ELEC-USB-TYPEC', stockLevel: 'medium', quantity: 10000, pricePerUnit: 85.00, unit: 'piece', lastUpdated: '2026-02-08' },
+      { id: 'DIST-005-C', name: 'Power Banks 10000mAh', sku: 'ELEC-PWR-10K', stockLevel: 'high', quantity: 5000, pricePerUnit: 450.00, unit: 'piece', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'DIST-006',
+    name: 'Balintawak Market (Wet Market)',
+    city: 'Quezon City',
+    role: 'Distributor',
+    businessType: 'Wet Market',
+    productCategory: 'Fresh Produce',
+    description: 'Major wet market in North Metro Manila',
+    latitude: 14.6760,
+    longitude: 121.0437,
+    contactEmail: 'admin@balintawakmarket.ph',
+    contactPhone: '+63 2 8364 7821',
+    products: [
+      { id: 'DIST-006-A', name: 'Chicken (Dressed)', sku: 'WET-CHICKEN-DRS', stockLevel: 'high', quantity: 1000, pricePerUnit: 160.00, unit: 'kg', lastUpdated: '2026-02-09' },
+      { id: 'DIST-006-B', name: 'Fresh Eggs (Tray)', sku: 'WET-EGGS-TRAY', stockLevel: 'high', quantity: 2000, pricePerUnit: 180.00, unit: 'tray (30pcs)', lastUpdated: '2026-02-08' },
+      { id: 'DIST-006-C', name: 'Fresh Fruits Assorted', sku: 'WET-FRUIT-MIX', stockLevel: 'medium', quantity: 800, pricePerUnit: 120.00, unit: 'kg', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'DIST-007',
+    name: 'SM Department Store - North EDSA',
+    city: 'Quezon City',
+    role: 'Distributor',
+    businessType: 'Department Store',
+    productCategory: 'Retail',
+    description: 'Full-service department store with diverse product lines',
+    latitude: 14.6560,
+    longitude: 121.0294,
+    contactEmail: 'procurement@smdept.ph',
+    contactPhone: '+63 2 8441 0951',
+    products: [
+      { id: 'DIST-007-A', name: 'Home Appliances', sku: 'DEPT-APPLIANCE', stockLevel: 'medium', quantity: 500, pricePerUnit: 5500.00, unit: 'unit', lastUpdated: '2026-02-09' },
+      { id: 'DIST-007-B', name: 'Clothing Apparel', sku: 'DEPT-APPAREL', stockLevel: 'high', quantity: 10000, pricePerUnit: 450.00, unit: 'piece', lastUpdated: '2026-02-08' },
+      { id: 'DIST-007-C', name: 'Footwear Assorted', sku: 'DEPT-FOOTWEAR', stockLevel: 'medium', quantity: 3000, pricePerUnit: 850.00, unit: 'pair', lastUpdated: '2026-02-10' },
+    ],
+  },
+  // ========== SUPPLIERS (Raw Materials & Logistics) ==========
+  {
+    id: 'SUPP-001',
+    name: 'Manila Logistics Hub',
+    city: 'Manila',
+    role: 'Supplier',
+    businessType: 'Logistics',
+    productCategory: 'Logistics',
+    description: 'Comprehensive logistics and warehousing solutions',
+    latitude: 14.5995,
+    longitude: 120.9842,
+    contactEmail: 'operations@manilalogistics.ph',
+    contactPhone: '+63 2 8528 3456',
+    products: [
+      { id: 'SUPP-001-A', name: 'Warehouse Storage (per sqm/month)', sku: 'LOG-WAREHOUSE-SQM', stockLevel: 'high', quantity: 50000, pricePerUnit: 250.00, unit: 'sqm', lastUpdated: '2026-02-09' },
+      { id: 'SUPP-001-B', name: 'Trucking Services (10-Wheeler)', sku: 'LOG-TRUCK-10W', stockLevel: 'medium', quantity: 50, pricePerUnit: 8500.00, unit: 'trip', lastUpdated: '2026-02-08' },
+      { id: 'SUPP-001-C', name: 'Cold Chain Storage', sku: 'LOG-COLD-STORAGE', stockLevel: 'medium', quantity: 5000, pricePerUnit: 450.00, unit: 'sqm', lastUpdated: '2026-02-10' },
+    ],
+  },
+  {
+    id: 'SUPP-002',
+    name: 'Cavite Packaging Industries',
+    city: 'Cavite',
+    role: 'Supplier',
+    businessType: 'Packaging',
+    productCategory: 'Packaging',
+    description: 'Industrial packaging materials manufacturer',
+    latitude: 14.4791,
+    longitude: 120.8970,
+    contactEmail: 'sales@cavitepackaging.ph',
+    contactPhone: '+63 46 431 2345',
+    products: [
+      { id: 'SUPP-002-A', name: 'Corrugated Boxes (Custom)', sku: 'PKG-BOX-CUSTOM', stockLevel: 'high', quantity: 100000, pricePerUnit: 22.00, unit: 'piece', lastUpdated: '2026-02-09' },
+      { id: 'SUPP-002-B', name: 'Plastic Containers Food Grade', sku: 'PKG-PLASTIC-FG', stockLevel: 'high', quantity: 50000, pricePerUnit: 15.00, unit: 'piece', lastUpdated: '2026-02-08' },
+      { id: 'SUPP-002-C', name: 'Pallet Wrap Industrial', sku: 'PKG-WRAP-IND', stockLevel: 'medium', quantity: 2000, pricePerUnit: 850.00, unit: 'roll', lastUpdated: '2026-02-10' },
+    ],
+  },
+];
+
+// Cities in the Philippines (Metro Manila + Key Producer Cities)
+export const cities: string[] = [
+  'Manila',
+  'Quezon City',
+  'Makati',
+  'Pasig',
+  'Taguig',
+  'Pasay',
+  'Quiapo',
+  'Cabanatuan',
+  'Ilagan',
+  'Lucena',
+  'Jordan',
+  'Legazpi',
+  'La Trinidad',
+  'Cavite',
+];
+
+// Producer Categories (Crops)
+export const producerCategories: string[] = [
+  'Rice',
+  'Corn',
+  'Coconut',
+  'Mango',
+  'Abaca',
+  'Vegetables',
+];
+
+// Distributor Types
+export const distributorTypes: string[] = [
+  'Supermarket',
+  'Wet Market',
+  'Drugstore',
+  'Department Store',
+  'Electronics Store',
+  'Textile Market',
+];
+
+// Legacy product categories (for backward compatibility)
+export const productCategories: string[] = [
+  'Rice',
+  'Corn',
+  'Coconut',
+  'Mango',
+  'Abaca',
+  'Vegetables',
+  'Retail',
+  'Fresh Produce',
+  'Pharmaceuticals',
+  'Apparel',
+  'Electronics',
+  'Logistics',
+  'Packaging',
+];
+
+// Helper functions
+export const getSupplierById = (id: string): Supplier | undefined => {
+  return suppliers.find((supplier) => supplier.id === id);
+};
+
+export const getSuppliersByCity = (city: string): Supplier[] => {
+  return suppliers.filter((supplier) => supplier.city === city);
+};
+
+export const getSuppliersByRole = (role: BusinessRole): Supplier[] => {
+  return suppliers.filter((supplier) => supplier.role === role);
+};
+
+export const getProducers = (): Supplier[] => {
+  return suppliers.filter((supplier) => supplier.role === 'Producer');
+};
+
+export const getDistributors = (): Supplier[] => {
+  return suppliers.filter((supplier) => supplier.role === 'Distributor');
+};
+
+export const getRawSuppliers = (): Supplier[] => {
+  return suppliers.filter((supplier) => supplier.role === 'Supplier');
+};
+
+export const getProducersByCategory = (category: string): Supplier[] => {
+  return suppliers.filter(
+    (supplier) => supplier.role === 'Producer' && supplier.productCategory === category
+  );
+};
+
+export const getDistributorsByType = (type: string): Supplier[] => {
+  return suppliers.filter(
+    (supplier) => supplier.role === 'Distributor' && supplier.businessType === type
+  );
+};
