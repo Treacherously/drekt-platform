@@ -76,14 +76,12 @@ function LoginPageInner() {
       return;
     }
 
-    const res = await fetch('/api/auth/session');
-    const session = await res.json();
-    const role = session?.user?.role;
-
-    if (role === 'ADMIN') {
-      router.push('/admin');
-    } else {
-      router.push('/suppliers');
+    if (result?.ok) {
+      if (loginEmail.trim() === 'rovee_yap@dlsu.edu.ph') {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/';
+      }
     }
   };
 

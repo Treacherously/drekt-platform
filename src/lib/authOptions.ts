@@ -73,23 +73,16 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user }) {
-      const FOUNDER_EMAIL = 'rovee_yap@dlsu.edu.ph';
-      if (user?.email === FOUNDER_EMAIL || token?.email === FOUNDER_EMAIL) {
-        token.role = 'ADMIN';
-      } else if (user) {
-        token.role = (user as any).role ?? 'SUPPLIER';
-      }
       if (user) {
+        token.role = (user as any).role;
         token.id = user.id;
-        token.isVerified = true;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token) {
+      if (session?.user) {
+        (session.user as any).role = token.role;
         (session.user as any).id = token.id as string;
-        session.user.role = token.role as 'ADMIN' | 'SUPPLIER' | 'GUEST';
-        session.user.isVerified = true;
       }
       return session;
     },

@@ -93,7 +93,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supplier = await Supplier.create(body);
+    // ── Geocode the text location via Nominatim ────────────────────────────────
+    let lat = 14.5995; // Default: Manila centre
+    let lng = 120.9842;
+
+    try {
+      const searchQuery = encodeURIComponent(`${body.location}, Philippines`);
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${searchQuery}`,
+        { headers: { 'User-Agent': 'DrektPH_Registration_Module' } }
+      );
+      const geoData = await geoRes.json();
+      if (Array.isArray(geoData) && geoData.length > 0) {
+        lat = parseFloat(geoData[0].lat);
+        lng = parseFloat(geoData[0].lon);
+      }
+    } catch {
+      console.warn('[POST /api/suppliers] Geocoding failed, using default Manila coordinates');
+    }
+
+    const supplier = await Supplier.create({
+      ...body,
+      latitude: lat,
+      longitude: lng,
+      geoLocation: { type: 'Point', coordinates: [lng, lat] },
+    });
 
     return NextResponse.json(
       { success: true, data: supplier },
