@@ -4,6 +4,8 @@ import { authOptions } from '../../../../../lib/authOptions';
 import { connectDB } from '../../../../../lib/mongodb';
 import User from '../../../../../models/User';
 
+export const dynamic = 'force-dynamic';
+
 // ─── POST /api/admin/users/verify ────────────────────────────────────────────
 // Allows an Admin to manually set isVerified=true for any user.
 // Body: { userId: string }

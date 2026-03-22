@@ -5,6 +5,8 @@ import { connectDB } from '../../../../../lib/mongodb';
 import User from '../../../../../models/User';
 import Supplier from '../../../../../models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/dashboard/supplier/inventory ────────────────────────────────────
 // Returns the dedicated inventory for the authenticated supplier.
 

@@ -5,6 +5,8 @@ import { connectDB } from '../../../../../lib/mongodb';
 import User from '../../../../../models/User';
 import Inquiry from '../../../../../models/Inquiry';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/dashboard/supplier/inquiries ────────────────────────────────────
 // Returns total and unread inquiry counts for the authenticated supplier.
 

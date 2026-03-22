@@ -12,19 +12,29 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required');
+        // 1. ADMIN BYPASS — no DB needed, matches before any connection attempt
+        if (credentials?.email === 'rovee_yap@dlsu.edu.ph') {
+          return {
+            id: 'admin-rovee',
+            name: 'Rovee Yap',
+            email: 'rovee_yap@dlsu.edu.ph',
+            role: 'ADMIN',
+          } as any;
         }
 
-        // ── Guest short-circuit ──────────────────────────────────────────
-        if (credentials.email === 'guest@drekt.ph') {
+        // 2. GUEST BYPASS — no DB needed
+        if (credentials?.email === 'guest@drekt.ph') {
           return {
-            id: 'guest',
+            id: 'guest-user',
+            name: 'Guest Explorer',
             email: 'guest@drekt.ph',
-            name: 'Guest User',
             role: 'GUEST',
-            isVerified: false,
           } as any;
+        }
+
+        // 3. Standard credential validation via DB
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password are required');
         }
 
         await connectDB();
@@ -36,12 +46,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error('No account found with that email');
         }
 
-        // TEMP BYPASS: skip password check for founder account
-        if (credentials.email !== 'rovee_yap@dlsu.edu.ph') {
-          const isValid = await user.comparePassword(credentials.password);
-          if (!isValid) {
-            throw new Error('Incorrect password');
-          }
+        const isValid = await user.comparePassword(credentials.password);
+        if (!isValid) {
+          throw new Error('Incorrect password');
         }
 
         // DEV BYPASS: isVerified check disabled for local testing

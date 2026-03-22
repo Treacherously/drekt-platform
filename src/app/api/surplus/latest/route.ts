@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/mongodb';
 import Surplus from '../../../../models/Surplus';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/surplus/latest ──────────────────────────────────────────────────
 // Public endpoint — returns the 5 most recent available surplus listings.
 

@@ -5,6 +5,8 @@ import { connectDB } from '../../../../../../lib/mongodb';
 import User from '../../../../../../models/User';
 import Surplus from '../../../../../../models/Surplus';
 
+export const dynamic = 'force-dynamic';
+
 // ─── PATCH /api/dashboard/supplier/surplus/[surplusId] ────────────────────────
 // Toggle isAvailable (mark as claimed / reopen)
 

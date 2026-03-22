@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/authOptions';
 import { connectDB } from '@/lib/mongodb';
 import Supplier from '@/models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 const PUREST_ADDRESS = 'B26 Lot 8 Arcadia, Kaligayahan, Novaliches, Quezon City, 1124 Metro Manila';
 const PUREST_LAT = 14.7294;
 const PUREST_LNG = 121.0560;

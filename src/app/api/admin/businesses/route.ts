@@ -4,6 +4,8 @@ import { authOptions } from '../../../../lib/authOptions';
 import { connectDB } from '../../../../lib/mongodb';
 import Supplier from '../../../../models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 // ─── PATCH /api/admin/businesses ─────────────────────────────────────────────
 // Body: { businessId: string, status: 'PENDING' | 'VERIFIED' | 'FEATURED' }
 // Updates the status of a business and sets isVerified accordingly.
@@ -66,6 +68,11 @@ export async function PATCH(req: NextRequest) {
 // Permanently removes a business from the database.
 
 export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
   try {
     await connectDB();
 

@@ -42,7 +42,6 @@ function LoginPageInner() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
 
   // ── Register state ─────────────────────────────────────────────────────────
   const [regEmail, setRegEmail] = useState('');
@@ -88,14 +87,8 @@ function LoginPageInner() {
     }
   };
 
-  const handleGuestLogin = async () => {
-    setGuestLoading(true);
-    await signIn('credentials', {
-      email: 'guest@drekt.ph',
-      password: 'guest',
-      callbackUrl: '/dashboard',
-    });
-    setGuestLoading(false);
+  const handleGuestLogin = () => {
+    router.push('/dashboard');
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -269,21 +262,12 @@ function LoginPageInner() {
                 <button
                   type="button"
                   onClick={handleGuestLogin}
-                  disabled={guestLoading}
-                  className="w-full py-2.5 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
                 >
-                  {guestLoading ? (
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                  {guestLoading ? 'Loading…' : 'Continue as Guest'}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Continue as Guest
                 </button>
 
                 <p className="text-center text-xs text-gray-400">

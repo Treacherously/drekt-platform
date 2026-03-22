@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/authOptions';
 import { connectDB } from '@/lib/mongodb';
 import Supplier from '@/models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 const METRO_MANILA_LAT = 14.5995;
 const METRO_MANILA_LNG = 120.9842;
 

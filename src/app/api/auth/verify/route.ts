@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/mongodb';
 import User from '../../../../models/User';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/auth/verify?token=XYZ ──────────────────────────────────────────
 // Validates the email verification token.
 // On success: sets isVerified=true, clears token, redirects to /login?verified=true

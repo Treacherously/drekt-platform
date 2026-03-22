@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/mongodb';
 import Supplier from '@/models/Supplier';
 import { EntityType } from '@/models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
 const OVERPASS_QUERY = `[out:json][timeout:25];

@@ -3,6 +3,8 @@ import { connectDB } from '../../../lib/mongodb';
 import SupplierModel, { EntityType } from '../../../models/Supplier';
 import { suppliers as mockSuppliers } from '../../../data/mockData';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/seed ────────────────────────────────────────────────────────────
 // Wipes the existing Supplier collection and re-seeds from mockData.
 // Safe to call multiple times — always deletes first to prevent duplicates.

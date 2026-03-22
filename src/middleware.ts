@@ -15,7 +15,7 @@ export default withAuth(
     callbacks: {
       authorized({ req, token }) {
         if (req.nextUrl.pathname.startsWith('/dashboard')) {
-          return token?.role === 'ADMIN' || token?.role === 'SUPPLIER' || token?.role === 'GUEST';
+          return true; // Public — allow unauthenticated guests
         }
         if (req.nextUrl.pathname.startsWith('/admin')) {
           return token?.role === 'ADMIN';

@@ -256,7 +256,7 @@ export default function DashboardLayout() {
   const [activeView, setActiveView] = useState<DashboardView>('stats');
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
-  const isGuest = session?.user?.role === 'GUEST';
+  const isGuest = !session || session?.user?.role === 'GUEST';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-[#121212] overflow-hidden">

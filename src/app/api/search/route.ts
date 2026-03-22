@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Supplier from '@/models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 const INTERNAL_THRESHOLD = 3;
 
 interface NominatimPlace {

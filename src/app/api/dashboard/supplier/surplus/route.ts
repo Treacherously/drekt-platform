@@ -6,6 +6,8 @@ import User from '../../../../../models/User';
 import Supplier from '../../../../../models/Supplier';
 import Surplus from '../../../../../models/Surplus';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/dashboard/supplier/surplus ──────────────────────────────────────
 // FARMER  → returns their own listings (all statuses)
 // Others  → returns all available listings from farmers (the rescue feed)

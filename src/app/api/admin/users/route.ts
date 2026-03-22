@@ -4,6 +4,8 @@ import { authOptions } from '../../../../lib/authOptions';
 import { connectDB } from '../../../../lib/mongodb';
 import User from '../../../../models/User';
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/admin/users ─────────────────────────────────────────────────────
 // Returns all users (admin only). Password fields are never returned.
 

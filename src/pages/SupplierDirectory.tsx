@@ -321,13 +321,17 @@ export default function SupplierDirectory() {
         const json = await res.json();
         if (!cancelled) {
           if (json.success) {
-            setSuppliers(json.data);
+            setSuppliers(json.data ?? []);
           } else {
+            setSuppliers([]);
             setError(json.message ?? 'Failed to load suppliers');
           }
         }
       } catch {
-        if (!cancelled) setError('Network error. Please try again.');
+        if (!cancelled) {
+          setSuppliers([]);
+          setError('Network error. Please try again.');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

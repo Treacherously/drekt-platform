@@ -3,10 +3,14 @@ import mongoose from 'mongoose';
 
 setServers(['8.8.8.8', '1.1.1.1']);
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable in .env.local');
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error('Please define the MONGODB_URI environment variable in .env.local');
+  } else {
+    console.warn('[mongodb] MONGODB_URI is not set. DB calls will fail at runtime.');
+  }
 }
 
 // ─── Connection cache (prevents multiple connections on hot-reload) ────────────
@@ -32,6 +36,9 @@ export async function connectDB(): Promise<typeof mongoose> {
   }
 
   if (!cached.promise) {
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URI is not defined. Set it in your environment variables.');
+    }
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
       family: 4,

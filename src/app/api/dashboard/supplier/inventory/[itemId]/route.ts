@@ -5,6 +5,8 @@ import { connectDB } from '../../../../../../lib/mongodb';
 import User from '../../../../../../models/User';
 import Supplier from '../../../../../../models/Supplier';
 
+export const dynamic = 'force-dynamic';
+
 // ─── DELETE /api/dashboard/supplier/inventory/[itemId] ────────────────────────
 // Removes a single dedicated inventory item by its _id.
 

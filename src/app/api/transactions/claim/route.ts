@@ -3,6 +3,8 @@ import { connectDB } from '../../../../lib/mongodb';
 import Supplier from '../../../../models/Supplier';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

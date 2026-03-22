@@ -5,6 +5,8 @@ import User from '../../../../models/User';
 import Supplier from '../../../../models/Supplier';
 import { sendVerificationEmail } from '../../../../lib/mail';
 
+export const dynamic = 'force-dynamic';
+
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 // Creates a new user account. Password is hashed automatically by the
 // User model's pre-save hook (bcryptjs, 12 rounds).
