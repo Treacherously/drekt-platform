@@ -401,6 +401,13 @@ export default function AdminDashboard() {
 
   const TABLE_HEAD = ['Business', 'Industry', 'Entity Types', 'Status', 'Contact', 'Registered', 'Actions'];
 
+  if (typeof window === 'undefined') return null;
+  if (status === 'loading') return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <p className="text-sm text-gray-400">Loading…</p>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
