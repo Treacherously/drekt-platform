@@ -19,7 +19,7 @@ const MapLegend = () => {
       </h3>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-green-500"></div>
+          <div className="w-4 h-4 rounded-full bg-brand-primary"></div>
           <span className="text-xs text-gray-700 dark:text-gray-300">Producer</span>
         </div>
         <div className="flex items-center gap-2">
@@ -433,7 +433,7 @@ export default function BusinessMap({ businesses, onLocationChange }: BusinessMa
       {userLocation && (
         <div className="absolute top-4 left-4 z-[1000] bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 text-xs font-medium">
           <div className="flex items-center gap-2 mb-1">
-            <div className={`w-2 h-2 rounded-full ${manualLocationOverride ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${manualLocationOverride ? 'bg-brand-primary' : 'bg-blue-500 animate-pulse'}`}></div>
             <span className="font-semibold">{manualLocationOverride ? 'Manual Location' : 'GPS Active'}</span>
           </div>
           {!manualLocationOverride && locationAccuracy && (
@@ -443,7 +443,7 @@ export default function BusinessMap({ businesses, onLocationChange }: BusinessMa
             </div>
           )}
           {manualLocationOverride && (
-            <div className="text-[10px] text-green-600 dark:text-green-400">
+            <div className="text-[10px] text-brand-accent dark:text-brand-primary">
               ✓ User confirmed
             </div>
           )}

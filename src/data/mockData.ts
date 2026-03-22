@@ -43,6 +43,7 @@ export interface Supplier {
   products: Product[];
   contactEmail: string;
   contactPhone: string;
+  entityType?: string[] | string;
 }
 
 export const suppliers: Supplier[] = [

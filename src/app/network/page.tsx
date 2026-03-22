@@ -42,7 +42,7 @@ function SchematicCard({ node, onMenuClick }: { node: ConnectionNode; onMenuClic
   const getStatusBadge = () => {
     switch (node.status) {
       case 'active':
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Active</span>;
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-brand-primary/10 text-brand-accent">Active</span>;
       case 'warning':
         return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Warning</span>;
       case 'delayed':
@@ -158,7 +158,7 @@ export default function NetworkPage() {
       {/* Legend */}
       <div className="flex justify-center gap-6 mb-8 text-xs text-gray-600">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Active</span>
+          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-brand-primary/10 text-brand-accent">Active</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Warning</span>
@@ -212,7 +212,7 @@ export default function NetworkPage() {
                 <div className="text-xs text-gray-600 mt-1">Suppliers</div>
               </div>
               <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-2xl font-bold text-green-600">{myBuyers.length}</div>
+                <div className="text-2xl font-bold text-brand-accent">{myBuyers.length}</div>
                 <div className="text-xs text-gray-600 mt-1">Buyers</div>
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function NetworkPage() {
 
           <button
             onClick={handleAddBuyer}
-            className="w-full mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-500 hover:border-green-400 hover:text-green-600 hover:bg-green-50 transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-500 hover:border-brand-primary hover:text-brand-accent hover:bg-brand-primary/5 transition-all flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -353,7 +353,7 @@ export default function NetworkPage() {
           <div className="text-xs text-gray-600 mt-1">Total Buyers</div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-2xl font-bold text-brand-accent">
             {mySuppliers.filter(s => s.status === 'active').length + myBuyers.filter(d => d.status === 'active').length}
           </div>
           <div className="text-xs text-gray-600 mt-1">Active Connections</div>

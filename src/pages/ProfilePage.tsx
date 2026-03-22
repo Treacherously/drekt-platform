@@ -132,9 +132,9 @@ export default function ProfilePage() {
               <p className="text-sm text-blue-600 dark:text-blue-400 mb-1">Total Orders</p>
               <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">127</p>
             </div>
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-              <p className="text-sm text-green-600 dark:text-green-400 mb-1">Active Suppliers</p>
-              <p className="text-2xl font-bold text-green-700 dark:text-green-300">23</p>
+            <div className="bg-brand-primary/10 dark:bg-brand-primary/20 p-4 rounded-lg">
+              <p className="text-sm text-brand-accent dark:text-brand-primary mb-1">Active Suppliers</p>
+              <p className="text-2xl font-bold text-brand-accent dark:text-brand-primary">23</p>
             </div>
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
               <p className="text-sm text-purple-600 dark:text-purple-400 mb-1">Saved Favorites</p>
@@ -154,19 +154,19 @@ export default function ProfilePage() {
           </h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-brand-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <span className="text-gray-700 dark:text-gray-300">Email Verified</span>
             </div>
             <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-brand-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <span className="text-gray-700 dark:text-gray-300">Phone Verified</span>
             </div>
             <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-brand-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <span className="text-gray-700 dark:text-gray-300">Business Documents Verified</span>

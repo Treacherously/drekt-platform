@@ -67,7 +67,7 @@ export default function SearchDashboard() {
   const getSourceBadge = (entity: BusinessEntity) => {
     if (entity.source === 'REGISTERED' && entity.verificationStatus === 'VERIFIED') {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-primary/10 text-brand-accent dark:bg-brand-primary/20 dark:text-brand-primary">
           ✓ Verified
         </span>
       );
@@ -225,7 +225,7 @@ export default function SearchDashboard() {
             </h2>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-primary/10 text-brand-accent dark:bg-brand-primary/20 dark:text-brand-primary">
                   ✓ Verified
                 </span>
                 <span className="text-gray-600 dark:text-gray-400">

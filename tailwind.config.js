@@ -10,9 +10,9 @@ module.exports = {
     extend: {
       // Font families based on Figma design
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Apercu', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['Apercu-Mono', 'monospace'],
+        sans: ['Poppins', 'system-ui', 'sans-serif'],
+        heading: ['Montserrat', 'system-ui', 'sans-serif'],
+        mono: ['monospace'],
       },
       
       // Typography scale
@@ -39,6 +39,15 @@ module.exports = {
 
       // Professional B2B color palette
       colors: {
+        // DREKT 70/20/10 Brand Tokens
+        brandGreen: '#01b141',
+        brand: {
+          base: '#FFFFFF',
+          primary: '#40d9c0',
+          accent: '#002db3',
+          dark: '#1a1a1a',
+        },
+
         // Primary brand colors
         primary: {
           50: '#eff6ff',

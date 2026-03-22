@@ -53,7 +53,7 @@ export default function ProductCard({
   const getStockLevelColor = () => {
     switch (stockLevel) {
       case 'high':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-brand-primary/10 text-brand-accent dark:bg-brand-primary/20 dark:text-brand-primary';
       case 'medium':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'low':
@@ -70,7 +70,7 @@ export default function ProductCard({
         {/* Verified Badge - Top Right */}
         {verified && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500 text-white shadow-lg">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-accent text-white shadow-lg">
               <svg className="w-2.5 h-2.5 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"

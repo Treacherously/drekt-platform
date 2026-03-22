@@ -53,7 +53,7 @@ export default function SupplierDetailPage() {
   const getStockLevelColor = (level: StockLevel) => {
     switch (level) {
       case 'high':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-brand-primary/10 text-brand-accent dark:bg-brand-primary/20 dark:text-brand-primary';
       case 'medium':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'low':
@@ -276,7 +276,7 @@ export default function SupplierDetailPage() {
             <div className="dashboard-stat">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Stock Status</p>
               <div className="flex gap-2 mt-2">
-                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-brand-primary/10 text-brand-accent dark:bg-brand-primary/20 dark:text-brand-primary">
                   {supplier.products.filter(p => p.stockLevel === 'high').length} High
                 </span>
                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">

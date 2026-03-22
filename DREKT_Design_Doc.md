@@ -1,94 +1,50 @@
 # 📂 DREKT: Project Design Document
 
-**Version:** 2.0  
-**Mission:** To democratize the Philippine Supply Chain by eliminating information asymmetry. We empower small businesses, startups, and producers (who lack 'connections') to trade directly, bypassing gatekeepers and predatory middlemen.
+# DREKT Platform - Technical Specification & AI System Directives
 
----
+## [PROJECT CONTEXT]
+You are building DREKT, a B2B SaaS and Supply Chain Intelligence Platform. The goal is to connect MSMEs (Micro, Small, and Medium Enterprises) directly with suppliers, bypassing middlemen. 
+**Crucial Context:** Do NOT build a simple directory. Build a robust, trust-based platform with real-time data persistence, consolidated communications, and supply chain intelligence.
 
-## 1. The Core Problem: Information Asymmetry
+## [TECH STACK]
+* [cite_start]**Frontend:** React (Next.js) or VueJS [cite: 33]
+* **Styling:** Tailwind CSS
+* [cite_start]**Backend:** Node.js [cite: 35] 
+* [cite_start]**Database:** MongoDB [cite: 36]
+* [cite_start]**Hosting:** Vercel (Frontend) + Render/Heroku/AWS (Backend) [cite: 37, 38]
 
-### The 'Network' Gap
-Currently, profitable supply chains are 'gatekept' by middlemen. If you don't have the right connections, you can't enter the market.
+## [DESIGN SYSTEM & UI DIRECTIVES]
+* [cite_start]**Inspiration:** JobStreet[cite: 25]. Clean, corporate, intuitive, and highly scannable.
+* **Colors:** Background: `#FFFFFF` | Text: `#000000` | Primary/Accent: `#16A34A` (Green).
+* **Typography:** Headings: `Montserrat` | Body/UI Elements: `Poppins`.
+* **STRICT UI RULES:**
+  * [cite_start]DO NOT use gamified UI (e.g., Capitalism Lab style)[cite: 26].
+  * [cite_start]DO NOT use overly "sci-fi" elements[cite: 27].
+  * [cite_start]Keep dashboards clean; avoid heavy text blocks and information overload[cite: 25].
 
-### The 'Facebook' Trap
-Small entrepreneurs rely on unverified Facebook groups for suppliers, leading to scams, ghosting, and unstable pricing.
+## [CORE ARCHITECTURE & FEATURES]
 
-### The Risk Blindness
-Small players have zero visibility on logistics risks (typhoons, road blocks), causing their businesses to fail where big corporations would survive.
+### 1. Smart Search & Dashboard (DrektSTATS)
+* **Layout:** JobStreet-style search bar and sidebar filters (Industry, Minimum Order Quantity, Location).
+* [cite_start]**Data Visualization:** Implement clean graphs/charts showing supply metrics and resource flow[cite: 29]. [cite_start]DO NOT build a basic, empty dashboard[cite: 30].
 
----
+### 2. Live Inventory System (Anti-Liability)
+* [cite_start]**Rule:** System must rely on dynamic database entries, NOT static inputs that display false stock[cite: 61]. 
+* **Action:** Build robust CRUD operations for suppliers to update inventory seamlessly.
 
-## 2. The Solution: 'DREKT' Platform
+### 3. Consolidated Communication Hub
+* [cite_start]**Problem:** B2B buyers hate managing separate email threads[cite: 68].
+* [cite_start]**Solution:** Implement an internal messaging system tying buyers and suppliers together within the app[cite: 69].
 
-A B2B (Business-to-Business) brokerage platform that acts as the 'Great Equalizer.' It provides Verified Information and Direct Connections to anyone, regardless of their network size.
+### 4. Supply Chain Intelligence (DrektVISION)
+* [cite_start]**Function:** Integrate real-time weather APIs to provide typhoon/weather alerts affecting agricultural routes[cite: 18, 73].
+* [cite_start]**UI:** Clean mapping interface showing supplier locations and potential logistics disruptions[cite: 67].
 
----
+## [DATA MODELS (MongoDB Schemas - Target Structure)]
+* [cite_start]**User/Buyer:** `id`, `businessName`, `industry`, `subscriptionTier` (Free, Premium)[cite: 71], `savedSuppliers`.
+* **Supplier:** `id`, `businessName`, `isVerified` (Boolean), `inventory` (Array of objects with real-time stock levels), `location` (GeoJSON).
 
-## 3. User Personas (The 'Underdogs')
-
-### The Entrepreneur
-A startup founder making chili garlic oil who needs a steady glass jar supplier (currently blocked by minimum order quantities).
-
-### The Small Producer
-A small furniture factory in Pampanga or a Rice Farmer in Nueva Ecija who gets squeezed by middlemen because they don't know who else to sell to.
-
-### The Distributor
-A sari-sari store wholesaler or small grocery owner looking for better margins but lacks access to big factories.
-
----
-
-## 4. Business Model (How we make money)
-
-### Digital Brokerage
-DREKT functions as a transparent digital broker.
-
-### Commission Rate
-We take a minimal transaction fee (approx. 1%) on successful orders. We profit by enabling volume and trust, not by gouging margins.
-
----
-
-## 5. Key Features & Architecture
-
-### A. The Smart Dashboard (The 'Equalizer')
-
-**Search:** Finds Small & Medium Enterprises (SMEs) alongside big corporations.
-
-**Filters:**
-- **Industry:** Packaging, Raw Materials, Food & Bev, Textiles, Electronics.
-- **Scale:** Filter by 'No Minimum Order' (crucial for startups).
-- **Verification:** 'Verified Partner' badges to replace the uncertainty of Facebook groups.
-
-### B. The Geospatial Map (Visibility)
-
-**Function:** Shows where the supply chain actually is.
-
-**Utility:** Helps a buyer find the closest supplier to save on shipping costs (which is often the killer for small businesses).
-
-### C. DREKT VISION (Risk Intelligence)
-
-**Purpose:** To give small players the same 'War Room' intelligence that big conglomerates have.
-
-**The Logic:**
-- Predicts supply chain disruptions (Typhoons, Traffic, Checkpoints).
-- **Actionable Advice:** 'Typhoon incoming in Region 3. Your glass bottle supplier might be delayed. Here is a backup supplier in Batangas.'
-
----
-
-## 6. Technical Stack
-
-- **Framework:** Next.js (React)
-- **Deployment:** Vercel (Free Tier)
-- **Data Strategy:** 'Hybrid' Database (Mock Data for local SMEs + Web Scraping for large distributors).
-
----
-
-## 7. The 'Golden Rule' for AI
-
-### Stop saying 'Farmer-First'
-Say **'Small Business First.'** Farmers are important, but they are just one type of producer.
-
-### Focus on Asymmetry
-The goal is to verify information that is currently hidden or unreliable.
-
-### Context
-Use diverse examples: A shoe maker in Marikina, a sardine canner in Zamboanga, a pili nut candy maker in Bicol.
+## [STRICT AI GUARDRAILS - DO NOT VIOLATE]
+1. **NO MOCK DATA:** Do not generate hardcoded frontend mock data. [cite_start]You must build backend connections and database schemas to establish data persistence[cite: 32, 97, 98].
+2. **TERMINOLOGY:** Use "Small Business First". Do not exclusively say "Farmer-First". Use diverse Philippine business examples (e.g., Marikina shoemaker, Zamboanga canner).
+3. **MONETIZATION LOGIC:** DREKT is a B2B SaaS. We do not rely on 1% transaction cuts. [cite_start]Build logic supporting Subscription Tiers and Premium Search Rankings[cite: 70, 71].
