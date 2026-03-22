@@ -355,9 +355,11 @@ export default function SupplierDirectory() {
     return result;
   }, [suppliers, selectedLocations, userLocation]);
 
+  const suppliersToRender = filteredSuppliers ?? [];
+
   const visibleSuppliers = useMemo(
-    () => filteredSuppliers.slice(0, visibleCount),
-    [filteredSuppliers, visibleCount]
+    () => suppliersToRender.slice(0, visibleCount),
+    [suppliersToRender, visibleCount]
   );
 
   const selectedSupplier = useMemo(
@@ -555,7 +557,7 @@ export default function SupplierDirectory() {
 
       {/* Master-Detail body */}
       <div className="flex flex-1 overflow-hidden">
-        {viewMode === 'map' && <DrektMap suppliers={filteredSuppliers} userLocation={userLocation} />}
+        {viewMode === 'map' && <DrektMap suppliers={suppliersToRender} userLocation={userLocation} />}
         {viewMode === 'list' && (
           <>
             {/* Left: compact scrollable list (35%) */}

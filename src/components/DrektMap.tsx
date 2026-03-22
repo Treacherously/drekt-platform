@@ -5,18 +5,52 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
+// Fix missing marker icons in Next.js
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MapSupplier {
   _id: string;
   businessName: string;
   industry: string;
-  location: string;
+  location: string | { lat?: number; lng?: number; coordinates?: number[] };
   status: string;
   entityType: string[];
   latitude?: number;
   longitude?: number;
+  lat?: number;
+  lng?: number;
   markerEmoji?: string;
+}
+
+// ─── Resilient coordinate resolver ────────────────────────────────────────────
+
+function resolveCoords(s: MapSupplier): { lat: number; lng: number } | null {
+  // 1. Flat latitude / longitude (primary schema)
+  if (typeof s.latitude === 'number' && typeof s.longitude === 'number') {
+    return { lat: s.latitude, lng: s.longitude };
+  }
+  // 2. Flat lat / lng aliases
+  if (typeof s.lat === 'number' && typeof s.lng === 'number') {
+    return { lat: s.lat, lng: s.lng };
+  }
+  // 3. Nested location object with lat/lng or GeoJSON coordinates [lng, lat]
+  const loc = s.location as any;
+  if (loc && typeof loc === 'object') {
+    if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+      return { lat: loc.lat, lng: loc.lng };
+    }
+    if (Array.isArray(loc.coordinates) && loc.coordinates.length >= 2) {
+      return { lat: loc.coordinates[1], lng: loc.coordinates[0] };
+    }
+  }
+  return null;
 }
 
 // ─── Emoji derivation ─────────────────────────────────────────────────────────
@@ -105,9 +139,9 @@ export default function DrektMap({
   suppliers: MapSupplier[];
   userLocation?: { lat: number; lng: number } | null;
 }) {
-  const suppliersWithCoords = propSuppliers.filter(
-    (s) => typeof s.latitude === 'number' && typeof s.longitude === 'number'
-  );
+  const suppliersWithCoords = propSuppliers
+    .map((s) => ({ s, coords: resolveCoords(s) }))
+    .filter((x): x is { s: MapSupplier; coords: { lat: number; lng: number } } => x.coords !== null);
   const mapped = suppliersWithCoords.length;
   const total = propSuppliers.length;
 
@@ -160,12 +194,13 @@ export default function DrektMap({
             </>
           )}
 
-          {suppliersWithCoords.map((s) => {
+          {suppliersWithCoords.map(({ s, coords }) => {
             const emoji = resolveEmoji(s);
+            const locLabel = typeof s.location === 'string' ? s.location : 'Metro Manila';
             return (
               <Marker
                 key={s._id}
-                position={[s.latitude!, s.longitude!]}
+                position={[coords.lat, coords.lng]}
                 icon={makeEmojiIcon(emoji)}
               >
                 <Popup>
@@ -174,7 +209,7 @@ export default function DrektMap({
                       {emoji} {s.businessName}
                     </p>
                     <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px' }}>
-                      {s.industry} · {s.location}
+                      {s.industry} · {locLabel}
                     </p>
                     <span
                       style={{
