@@ -6,6 +6,7 @@ import Link from 'next/link';
 import SearchBar from '../components/SearchBar';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import type { GetServerSideProps } from 'next';
 
 interface SurplusTick {
   _id: string;
@@ -302,3 +303,9 @@ export default function HomePage() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};

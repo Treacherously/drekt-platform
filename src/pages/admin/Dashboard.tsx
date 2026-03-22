@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ApiSupplier, BusinessStatus } from '../../types/supplier';
+import type { GetServerSideProps } from 'next';
 
 // ─── User type (for Users tab) ──────────────────────────────────────────────
 
@@ -846,3 +847,9 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import { EntityType } from '../types/supplier';
+import type { GetServerSideProps } from 'next';
 
 const ENTITY_TYPES: { value: EntityType; label: string; description: string }[] = [
   { value: 'MANUFACTURER', label: 'Manufacturer', description: 'Produces goods or processes raw materials' },
@@ -354,3 +355,9 @@ export default function RegisterBusiness() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};

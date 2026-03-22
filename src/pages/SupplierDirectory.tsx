@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ApiSupplier } from '../types/supplier';
+import type { GetServerSideProps } from 'next';
 import Navbar from '../components/Navbar';
 import SupplierDetailView from '../components/SupplierDetailView';
 
@@ -617,3 +618,9 @@ export default function SupplierDirectory() {
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};
