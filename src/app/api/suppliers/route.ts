@@ -5,66 +5,137 @@ import Supplier from '../../../models/Supplier';
 export const dynamic = 'force-dynamic';
 
 // ─── GET /api/suppliers ───────────────────────────────────────────────────────
-// Returns all business entities. Optional query filters:
-//   ?q=<text>          — regex search across businessName / description / productCategory
-//   ?industry=<name>   — filter by industry (case-insensitive)
-//   ?location=<city>   — filter by location (case-insensitive)
-//   ?entityType=<type> — filter by entityType enum (MANUFACTURER, LOGISTICS, etc.)
-//   ?status=<status>   — filter by status (PENDING | VERIFIED | FEATURED)
+// Returns suppliers from MongoDB. Falls back to Overpass OSM when DB has < 5 results.
+// Query params: ?q= ?industry= ?location= ?entityType= ?status=
 
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
 
-    const sample = await Supplier.findOne({ entityType: { $exists: true, $not: { $size: 0 } } });
-    console.log('DEBUG: Raw DB Record EntityType:', JSON.stringify(sample?.entityType));
-
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get('q')?.trim();
-    const industry = searchParams.get('industry')?.trim();
-    const location = searchParams.get('location')?.trim();
-    const entityType = searchParams.get('entityType')?.trim();
+    const q            = searchParams.get('q')?.trim();
+    const industry     = searchParams.get('industry')?.trim();
+    const location     = searchParams.get('location')?.trim();
+    const entityType   = searchParams.get('entityType')?.trim();
     const statusFilter = searchParams.get('status')?.trim();
-    console.log('SEARCHING FOR:', entityType);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {};
 
-    if (statusFilter) {
-      filter.status = statusFilter;
-    }
-
-    if (industry) {
-      filter.industry = { $regex: industry, $options: 'i' };
-    }
-
-    if (location) {
-      filter.location = { $regex: location, $options: 'i' };
-    }
-
-    if (entityType) {
-      const typeRegex = new RegExp(`^${entityType}$`, 'i');
-      filter.entityType = { $in: [typeRegex] };
-    }
-
+    if (statusFilter) filter.status     = statusFilter;
+    if (industry)     filter.industry   = { $regex: industry, $options: 'i' };
+    if (location)     filter.location   = { $regex: location, $options: 'i' };
+    if (entityType)   filter.entityType = { $in: [new RegExp(`^${entityType}$`, 'i')] };
     if (q) {
       filter.$or = [
-        { businessName: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
+        { businessName:    { $regex: q, $options: 'i' } },
+        { description:     { $regex: q, $options: 'i' } },
         { productCategory: { $regex: q, $options: 'i' } },
-        { industry: { $regex: q, $options: 'i' } },
+        { industry:        { $regex: q, $options: 'i' } },
       ];
     }
 
-    console.log('[GET /api/suppliers] Final MongoDB Filter:', JSON.stringify(filter, null, 2));
-
-    const suppliers = await Supplier.find(filter)
+    const dbResults = await Supplier.find(filter)
       .select('-__v')
       .sort({ status: 1, createdAt: -1 })
       .lean();
 
+    console.log('[DEBUG] Local DB Results:', dbResults.length);
+    console.log('[DEBUG] Search Params:', { q, location, industry, entityType, statusFilter });
+
+    // Enough local data — return immediately, skip Overpass
+    if (dbResults.length >= 5) {
+      return NextResponse.json(
+        { success: true, count: dbResults.length, data: dbResults },
+        { status: 200 }
+      );
+    }
+
+    // ── Overpass OSM fallback (only when local data is sparse) ─────────────────
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let osmSuppliers: any[] = [];
+
+    try {
+      console.log('[DEBUG] Triggering Overpass Fallback...');
+      const rawTerm = q || entityType || industry || location || 'business';
+      const term = rawTerm.replace(/[[\]\\^$.|?*+(){}]/g, '\\$&');
+      // POST avoids URL-length truncation; [out:json] must be first to prevent XML error pages
+      // NOTE: the ,i modifier must be unquoted in Overpass QL — "amenity"~"food",i NOT "food","i"
+      const overpassQL = [
+        '[out:json][timeout:5];',
+        '(',
+        `  node["amenity"~"${term}",i](14.3,120.9,14.8,121.1);`,
+        `  node["shop"~"${term}",i](14.3,120.9,14.8,121.1);`,
+        `  node["office"~"${term}",i](14.3,120.9,14.8,121.1);`,
+        `  node["name"~"${term}",i]["building"](14.3,120.9,14.8,121.1);`,
+        `  way["name"~"${term}",i]["building"](14.3,120.9,14.8,121.1);`,
+        ');',
+        'out center 20;',
+      ].join('\n');
+
+      console.log('[DEBUG] Overpass Query:', overpassQL);
+
+      const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'DrektPH-LiveSearch/1.0',
+        },
+        body: `data=${encodeURIComponent(overpassQL)}`,
+        signal: AbortSignal.timeout(5_000),
+      });
+
+      console.log('[DEBUG] Overpass Status:', overpassRes.status);
+      const rawText = await overpassRes.text();
+      console.log('[DEBUG] Overpass Raw Text (first 100 chars):', rawText.substring(0, 100));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        console.warn('[GET /api/suppliers] Overpass non-JSON response:', rawText.substring(0, 120));
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const elements: any[] = Array.isArray(parsed?.elements) ? parsed.elements : [];
+
+      const candidates = elements
+        .filter((el) => el.tags?.name && (el.lat ?? el.center?.lat))
+        .map((el) => osmNodeToSupplier(el));
+
+      // Deduplicate against existing DB records
+      if (candidates.length > 0) {
+        const names = candidates.map((s) => s.businessName);
+        const existing = await Supplier.find({ businessName: { $in: names } })
+          .select('businessName').lean();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existingSet = new Set(existing.map((s: any) => s.businessName.toLowerCase()));
+        osmSuppliers = candidates.filter((s) => !existingSet.has(s.businessName.toLowerCase()));
+      }
+
+      // Background upsert — fire-and-forget, never blocks HTTP response
+      if (osmSuppliers.length > 0) {
+        Supplier.bulkWrite(
+          osmSuppliers.map((s) => ({
+            updateOne: {
+              filter: { businessName: s.businessName },
+              update: { $setOnInsert: s },
+              upsert: true,
+            },
+          }))
+        ).catch((err) =>
+          console.warn('[GET /api/suppliers] Background OSM upsert failed:', err.message)
+        );
+      }
+    } catch (err: any) {
+      console.error('[DEBUG] Overpass Try/Catch Error:', err);
+      const reason = err.name === 'AbortError' ? 'timed out' : err.message;
+      console.warn(`[GET /api/suppliers] Overpass skipped (${reason})`);
+    }
+
+    const combined = [...dbResults, ...osmSuppliers];
     return NextResponse.json(
-      { success: true, count: suppliers.length, data: suppliers },
+      { success: true, count: combined.length, data: combined },
       { status: 200 }
     );
   } catch (error) {
@@ -139,4 +210,51 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ─── OSM helpers ──────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function osmNodeToSupplier(el: any) {
+  const tags     = (el.tags ?? {}) as Record<string, string>;
+  const lat      = (el.lat  ?? el.center?.lat) as number;
+  const lng      = (el.lon  ?? el.center?.lon) as number;
+  const location = tags['addr:city'] || tags['addr:province'] || 'Philippines';
+
+  return {
+    businessName:       tags.name,
+    description:        `Sourced from OpenStreetMap (OSM ID: ${el.id})`,
+    location,
+    industry:           resolveOsmIndustry(tags),
+    entityType:         [resolveOsmEntityType(tags)],
+    status:             'PENDING' as const,
+    isVerified:         false,
+    contactPhone:       tags.phone        || tags['contact:phone'] || '',
+    contactEmail:       tags.email        || tags['contact:email'] || '',
+    latitude:           lat,
+    longitude:          lng,
+    geoLocation:        { type: 'Point' as const, coordinates: [lng, lat] as [number, number] },
+    markerEmoji:        '📍',
+    inventory:          [],
+    dedicatedInventory: [],
+    specialties:        [],
+    logoUrl:            '',
+  };
+}
+
+function resolveOsmEntityType(tags: Record<string, string>): string {
+  if (tags.shop === 'wholesale'        || tags.office === 'company')    return 'DISTRIBUTOR';
+  if (tags.landuse === 'industrial'    || tags['man_made'] === 'works') return 'MANUFACTURER';
+  if (tags.building === 'warehouse'    || tags.landuse === 'warehouse') return 'WAREHOUSE';
+  if (tags.landuse === 'farmland'      || tags.shop === 'farm')         return 'AGRICULTURE';
+  if (tags.amenity === 'logistics'     || tags.transport === 'logistics') return 'LOGISTICS';
+  return 'SUPPLIER';
+}
+
+function resolveOsmIndustry(tags: Record<string, string>): string {
+  if (tags.landuse === 'farmland'      || tags.shop === 'farm')         return 'Agriculture & Farming';
+  if (tags.shop === 'food'             || tags.amenity === 'marketplace') return 'Food & Beverage';
+  if (tags.landuse === 'industrial'    || tags['man_made'] === 'works') return 'Logistics & Freight';
+  if (tags.building === 'warehouse')                                     return 'Warehousing & Storage';
+  return 'Other';
 }

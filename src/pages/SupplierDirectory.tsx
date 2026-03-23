@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ApiSupplier } from '../types/supplier';
 import type { GetServerSideProps } from 'next';
@@ -176,14 +176,17 @@ function CompactSupplierCard({
   supplier,
   isActive,
   onClick,
+  onDoubleClick,
 }: {
   supplier: ApiSupplier;
   isActive: boolean;
   onClick: () => void;
+  onDoubleClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       className={`w-full text-left px-4 py-4 border-b border-gray-100 dark:border-gray-700 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40 focus:outline-none ${
         isActive ? 'bg-brand-primary/10 dark:bg-brand-primary/5 border-l-2 border-l-brand-accent dark:border-l-brand-primary' : 'border-l-2 border-l-transparent'
       }`}
@@ -237,6 +240,7 @@ function CompactSupplierCard({
 }
 
 export default function SupplierDirectory() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialQ = searchParams.get('q') ?? '';
   const initialLoc = searchParams.get('loc') ?? '';
@@ -597,6 +601,7 @@ export default function SupplierDirectory() {
                             : supplier._id === filteredSuppliers[0]?._id
                         }
                         onClick={() => setSelectedSupplierId(supplier._id)}
+                        onDoubleClick={() => router.push(`/supplier/${supplier._id}`)}
                       />
                     ))}
                     {visibleCount < filteredSuppliers.length && (

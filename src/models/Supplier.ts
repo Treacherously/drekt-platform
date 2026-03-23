@@ -9,6 +9,13 @@ export interface IInventoryItem {
   price: number;
 }
 
+export interface IProductItem {
+  name: string;
+  price: number;
+  mockQuantity: number;
+  stockStatus: 'High' | 'Medium' | 'Low';
+}
+
 export interface IDedicatedInventoryItem {
   _id: mongoose.Types.ObjectId;
   itemName: string;
@@ -42,6 +49,7 @@ export interface ISupplier extends Document {
   contactPhone?: string;
   inventory: IInventoryItem[];
   dedicatedInventory: IDedicatedInventoryItem[];
+  products: IProductItem[];
   specialties: string[];
   logoUrl: string;
   latitude?: number;
@@ -71,6 +79,16 @@ const DedicatedInventoryItemSchema = new Schema<IDedicatedInventoryItem>(
     price: { type: Number, required: true, min: 0 },
     lastUpdated: { type: Date, default: Date.now },
   }
+);
+
+const ProductItemSchema = new Schema<IProductItem>(
+  {
+    name:          { type: String, required: true, trim: true },
+    price:         { type: Number, required: true, min: 0 },
+    mockQuantity:  { type: Number, required: true, min: 0 },
+    stockStatus:   { type: String, enum: ['High', 'Medium', 'Low'], required: true },
+  },
+  { _id: false }
 );
 
 const GeoLocationSchema = new Schema<IGeoLocation>(
@@ -136,6 +154,10 @@ const SupplierSchema = new Schema<ISupplier>(
     },
     inventory: {
       type: [InventoryItemSchema],
+      default: [],
+    },
+    products: {
+      type: [ProductItemSchema],
       default: [],
     },
     dedicatedInventory: {

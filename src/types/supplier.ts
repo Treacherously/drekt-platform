@@ -14,6 +14,13 @@ export interface ApiDedicatedInventoryItem {
   lastUpdated: string;
 }
 
+export interface ApiProductItem {
+  name: string;
+  price: number;
+  mockQuantity: number;
+  stockStatus: 'High' | 'Medium' | 'Low';
+}
+
 export type EntityType = 'MANUFACTURER' | 'LOGISTICS' | 'WAREHOUSE' | 'AGRICULTURE' | 'DISTRIBUTOR' | 'SUPPLIER' | 'FARMER' | 'PROCESSOR';
 export type BusinessStatus = 'PENDING' | 'VERIFIED' | 'FEATURED';
 
@@ -30,6 +37,7 @@ export interface ApiSupplier {
   contactEmail?: string;
   contactPhone?: string;
   inventory: ApiInventoryItem[];
+  products?: ApiProductItem[];
   dedicatedInventory: ApiDedicatedInventoryItem[];
   specialties: string[];
   logoUrl?: string;

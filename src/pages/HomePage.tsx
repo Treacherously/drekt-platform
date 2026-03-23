@@ -203,7 +203,7 @@ export default function HomePage() {
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Quick Actions</p>
 
                 <Link
-                  href="/login"
+                  href="/agri-rescue?action=report"
                   className="flex items-center gap-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 hover:border-brand-primary rounded-xl px-5 py-4 transition-all group hover:shadow-md"
                 >
                   <div className="w-11 h-11 rounded-xl bg-brand-primary/10 flex items-center justify-center text-2xl flex-shrink-0 group-hover:bg-brand-primary/20 transition-colors">
@@ -223,7 +223,7 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/login"
+                  href="/agri-rescue"
                   className="flex items-center gap-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 hover:border-brand-primary rounded-xl px-5 py-4 transition-all group hover:shadow-md"
                 >
                   <div className="w-11 h-11 rounded-xl bg-brand-primary/10 flex items-center justify-center text-2xl flex-shrink-0 group-hover:bg-brand-primary/20 transition-colors">

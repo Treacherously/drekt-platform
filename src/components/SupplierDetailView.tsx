@@ -306,13 +306,11 @@ function ClaimModal({
   );
 }
 
-// ─── Main view ────────────────────────────────────────────────────────────────
-
-export default function SupplierDetailView({ supplier }: SupplierDetailViewProps) {
+export default function SupplierDetailView({ supplier }: { supplier: ApiSupplier | null }) {
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [claimTarget, setClaimTarget] = useState<ApiDedicatedInventoryItem | null>(null);
-  const [claimToast, setClaimToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [claimToast, setClaimToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [localDedicated, setLocalDedicated] = useState<ApiDedicatedInventoryItem[]>(
     supplier?.dedicatedInventory ?? []
   );
@@ -320,6 +318,36 @@ export default function SupplierDetailView({ supplier }: SupplierDetailViewProps
   useEffect(() => {
     setLocalDedicated(supplier?.dedicatedInventory ?? []);
   }, [supplier]);
+
+  type InventoryRow = {
+    key: string;
+    itemName: string;
+    quantity: number;
+    unit: string;
+    price: number;
+    stockLevel: 'high' | 'medium' | 'low';
+  };
+
+  const products = Array.isArray(supplier?.products) ? supplier.products : [];
+  const inventory = Array.isArray(supplier?.inventory) ? supplier.inventory : [];
+
+  const inventoryRows: InventoryRow[] = products.length > 0
+    ? products.map((p, idx) => ({
+        key: `product-${idx}`,
+        itemName: p.name,
+        quantity: p.mockQuantity,
+        unit: 'units',
+        price: p.price,
+        stockLevel: p.stockStatus === 'High' ? 'high' : p.stockStatus === 'Medium' ? 'medium' : 'low',
+      }))
+    : inventory.map((i, idx) => ({
+        key: `inventory-${idx}`,
+        itemName: i.itemName,
+        quantity: i.quantity,
+        unit: i.unit,
+        price: i.price,
+        stockLevel: i.quantity >= 200 ? 'high' : i.quantity >= 50 ? 'medium' : 'low',
+      }));
 
   const handleClaimSuccess = (itemId: string, newQuantity: number) => {
     setLocalDedicated((prev) =>
@@ -413,6 +441,12 @@ export default function SupplierDetailView({ supplier }: SupplierDetailViewProps
               >
                 Send Inquiry
               </button>
+              <a
+                href={`/supplier/${supplier._id}`}
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                View Full Profile
+              </a>
               <button
                 onClick={handleSave}
                 className="text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -541,35 +575,81 @@ export default function SupplierDetailView({ supplier }: SupplierDetailViewProps
         )}
 
         {/* Regular Inventory */}
-        {supplier.inventory.length > 0 && (
-          <section>
-            <h2 className="font-heading font-semibold text-sm text-gray-900 uppercase tracking-wide mb-3">
-              Products &amp; Inventory ({supplier.inventory.length})
-            </h2>
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Item</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Price / Unit</th>
-                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Qty Available</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {supplier.inventory.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">{item.itemName}</td>
-                      <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
-                        ₱{item.price.toFixed(2)}<span className="text-gray-400">/{item.unit}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{item.quantity.toLocaleString()} {item.unit}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section>
+          <h2 className="font-heading font-semibold text-sm text-gray-900 dark:text-white uppercase tracking-wide mb-3">
+            Products &amp; Inventory ({inventoryRows.length})
+          </h2>
+
+            {/* Estimated Data Disclaimer Banner */}
+            <div className="flex items-start gap-3 mb-4 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40">
+              <span className="text-base mt-0.5 shrink-0">💡</span>
+              <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+                <span className="font-semibold">Note:</span> Prices and inventory levels shown are{' '}
+                <span className="font-semibold">estimated industry averages</span>, generated to give you a preliminary overview.{' '}
+                <a
+                  href="/register"
+                  className="inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-400 underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 transition-colors"
+                >
+                  🔓 Unlock Premium
+                </a>{' '}
+                to access real-time verified supplier data, direct quotes, and exact warehouse stock.
+              </p>
             </div>
-          </section>
-        )}
+
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Item</th>
+                  <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Stock Status</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Est. Price / Unit</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Est. Qty</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                {inventoryRows.length > 0 ? (
+                  inventoryRows.map((item: InventoryRow) => {
+                    const level = item.stockLevel;
+                    const stockBadge =
+                      level === 'high'
+                        ? { label: 'High Stock',   dots: '●●●', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800' }
+                        : level === 'medium'
+                        ? { label: 'Medium Stock', dots: '●●○', cls: 'text-amber-700  bg-amber-50  border-amber-200  dark:text-amber-400  dark:bg-amber-900/20  dark:border-amber-800'  }
+                        : { label: 'Low Stock',    dots: '●○○', cls: 'text-red-600   bg-red-50    border-red-200    dark:text-red-400    dark:bg-red-900/20    dark:border-red-800'    };
+                    return (
+                      <tr key={item.key} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">{item.itemName}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${stockBadge.cls}`}>
+                            <span className="tracking-tighter text-[10px]">{stockBadge.dots}</span>
+                            {stockBadge.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                          ₱{Number(item.price).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <span className="text-gray-400 text-xs">/{item.unit}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-gray-700 dark:text-gray-300">
+                            Est.{" "}
+                            <span className="font-semibold">{Number(item.quantity).toLocaleString('en-PH')}</span>
+                          </span>
+                          <span className="block text-[11px] text-gray-400 dark:text-gray-500">{item.unit}</span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">
+                      Standard Industry Inventory
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
         {/* Data Integrity Notice */}
         <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">

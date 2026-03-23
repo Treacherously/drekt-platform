@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "seed:outscraper": "tsx src/scripts/seedFromOutscraper.ts",
+    "patch:suppliers": "tsx src/scripts/patchSuppliers.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -39,6 +41,7 @@
     "eslint-config-next": "14.0.4",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   },
   "engines": {
